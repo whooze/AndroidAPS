@@ -500,6 +500,18 @@
                 android:paddingLeft="0dp"
                 android:paddingRight="0dp"
                 android:text="@string/combo_refresh" />
+
+            <info.nightscout.utils.SingleClickButton
+                android:id="@+id/combo_ruffy_button"
+                style="@style/ButtonSmallFontStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:layout_marginRight="-4dp"
+                android:drawableTop="@drawable/icon_cp_cgm_target"
+                android:paddingLeft="0dp"
+                android:paddingRight="0dp"
+                android:text="kill ruffy" />
         </LinearLayout>
 
     </LinearLayout>

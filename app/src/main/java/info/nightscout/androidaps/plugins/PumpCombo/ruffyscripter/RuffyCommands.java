@@ -1,5 +1,7 @@
 package info.nightscout.androidaps.plugins.PumpCombo.ruffyscripter;
 
+import android.content.Context;
+
 import info.nightscout.androidaps.plugins.PumpCombo.ruffyscripter.history.PumpHistoryRequest;
 
 public interface RuffyCommands {
@@ -27,6 +29,8 @@ public interface RuffyCommands {
     boolean isConnected();
 
     void disconnect();
+
+    RuffyCommands recreate(Context context);
 
     /** Read the state of the pump, which encompasses all information displayed on the main menu. */
     CommandResult readPumpState();
