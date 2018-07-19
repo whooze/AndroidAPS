@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -56,6 +57,8 @@ public class RuffyScripter implements RuffyCommands {
     private volatile Menu currentMenu;
     private volatile long menuLastUpdated = 0;
     private volatile boolean unparsableMenuEncountered;
+
+    private ServiceConnection mRuffyServiceConnection;
 
 
     private String previousCommand = "<none>";
@@ -130,6 +133,25 @@ public class RuffyScripter implements RuffyCommands {
         }
     };
 
+    @Override
+    public RuffyCommands recreate(Context context) {
+
+        //unbind ruffy service
+        if (mRuffyServiceConnection != null) {
+            context.unbindService(mRuffyServiceConnection);
+        }
+
+        //send kill signal to ruffy
+        final Intent intent = new Intent("org.monkey.d.ruffy.ruffy.WATCHDOG");
+        final Bundle bundle = new Bundle();
+        bundle.putString("uniquePayload", "" + System.currentTimeMillis());
+        intent.putExtras(bundle).addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        context.sendBroadcast(intent);
+
+        //create new RuffyScripter
+        return new RuffyScripter(context);
+    }
+
     public RuffyScripter(Context context) {
         boolean boundSucceeded = false;
 
@@ -148,7 +170,7 @@ public class RuffyScripter implements RuffyCommands {
                     ));
             context.startService(intent);
 
-            ServiceConnection mRuffyServiceConnection = new ServiceConnection() {
+            mRuffyServiceConnection = new ServiceConnection() {
                 @Override
                 public void onServiceConnected(ComponentName name, IBinder service) {
                     log.debug("ruffy service connected");

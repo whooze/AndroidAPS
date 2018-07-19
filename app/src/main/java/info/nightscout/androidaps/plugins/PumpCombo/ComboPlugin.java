@@ -120,7 +120,7 @@ public class ComboPlugin extends PluginBase implements PumpInterface, Constraint
     }
 
     @NonNull
-    private final RuffyCommands ruffyScripter;
+    private RuffyCommands ruffyScripter;
 
     @NonNull
     private static final ComboPump pump = new ComboPump();
@@ -1402,4 +1402,11 @@ public class ComboPlugin extends PluginBase implements PumpInterface, Constraint
             maxIob.setIfSmaller(0d, String.format(MainApp.gs(R.string.limitingmaxiob), 0d, MainApp.gs(R.string.unsafeusage)), this);
         return maxIob;
     }
+
+
+    //TODO: Adrian call from right position?
+    public void forceRuffyReconnect(){
+        ruffyScripter = ruffyScripter.recreate(MainApp.instance());
+    }
+
 }
