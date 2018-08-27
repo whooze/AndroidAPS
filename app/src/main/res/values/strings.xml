@@ -1211,6 +1211,12 @@
     <string name="key_short_tabtitles" translatable="false">short_tabtitles</string>
     <string name="pairfirst">Please pair your pump with your phone!</string>
 
+    <string name="SourceFile">SourceFile</string>
+    <string name="sourceFile_shortname">SF</string>
+    <string name="sf_settings">SourceFile Settings</string>
+    <string name="description_source_file">Reads BG values from a file in the raw directory..</string>
+    <string name="read_source_file">Read BG Source file</string>
+
     <plurals name="objective_days">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>

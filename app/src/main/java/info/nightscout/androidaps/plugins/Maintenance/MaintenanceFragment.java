@@ -8,10 +8,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.io.IOException;
+
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
 import info.nightscout.androidaps.plugins.Maintenance.activities.LogSettingActivity;
+import info.nightscout.androidaps.plugins.Source.SourceFilePlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 
 /**
@@ -74,6 +77,15 @@ public class MaintenanceFragment extends Fragment {
 
         view.findViewById(R.id.nav_logsettings).setOnClickListener(view1 -> {
             startActivity(new Intent(getActivity(), LogSettingActivity.class));
+        });
+
+        view.findViewById(R.id.read_source_file).setOnClickListener(view1 -> {
+            SourceFilePlugin plugin = MainApp.getSpecificPlugin(SourceFilePlugin.class);
+            try {
+                plugin.readDataFromFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
 
