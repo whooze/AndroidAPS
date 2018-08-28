@@ -2,15 +2,20 @@ package info.nightscout.androidaps.plugins.Source;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import android.support.v4.content.FileProvider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import info.nightscout.androidaps.BuildConfig;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.interfaces.BgSourceInterface;
 import info.nightscout.androidaps.interfaces.PluginBase;
@@ -57,8 +62,10 @@ public class SourceFilePlugin extends PluginBase implements BgSourceInterface {
     }
 
     public void readDataFromFile() throws IOException {
-        int resId = R.raw.testfile;
-        InputStream is = this.context.getResources().openRawResource(resId);
+        File dir = new File(context.getExternalFilesDir(null), "imports");
+        File importFile = new File(dir, "testfile.json");
+
+        InputStream is = new FileInputStream(importFile);
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         String line;

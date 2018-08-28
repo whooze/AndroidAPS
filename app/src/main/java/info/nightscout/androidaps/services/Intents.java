@@ -51,4 +51,6 @@ public interface Intents {
     String DEXCOMG5_BG = "com.dexcom.cgm.DATA";
 
     String POCTECH_BG = "com.china.poctech.data";
+
+    String ACTION_READ_SF = "org.nightscout.androidaps.ACTION_READ_SF";
 }

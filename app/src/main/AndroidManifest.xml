@@ -127,6 +127,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Network change local receiver -->
+        <receiver android:name=".receivers.SourceFileReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.nightscout.androidaps.ACTION_READ_SF" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -38,6 +38,8 @@ import com.squareup.otto.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 import info.nightscout.androidaps.activities.AgreementActivity;
 import info.nightscout.androidaps.activities.HistoryBrowseActivity;
 import info.nightscout.androidaps.activities.PreferencesActivity;
@@ -51,6 +53,7 @@ import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
 import info.nightscout.androidaps.plugins.NSClientInternal.data.NSSettingsStatus;
+import info.nightscout.androidaps.plugins.Source.SourceFilePlugin;
 import info.nightscout.androidaps.setupwizard.SetupWizardActivity;
 import info.nightscout.androidaps.tabs.TabPageAdapter;
 import info.nightscout.utils.AndroidPermission;
@@ -115,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         VersionChecker.check();
+
     }
 
     private void checkPluginPreferences(ViewPager viewPager) {
