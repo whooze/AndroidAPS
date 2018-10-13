@@ -523,17 +523,11 @@ public class CommandQueue {
     }
 
     protected void showBolusProgressDialog(Double insulin, Context context) {
-        if (context != null) {
-            BolusProgressDialog bolusProgressDialog = new BolusProgressDialog();
-            bolusProgressDialog.setInsulin(insulin);
-            bolusProgressDialog.show(((AppCompatActivity) context).getSupportFragmentManager(), "BolusProgress");
-        } else {
-            Intent i = new Intent();
-            i.putExtra("insulin", insulin);
-            i.setClass(MainApp.instance(), BolusProgressHelperActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            MainApp.instance().startActivity(i);
-        }
+        Intent i = new Intent();
+        i.putExtra("insulin", insulin);
+        i.setClass(MainApp.instance(), BolusProgressHelperActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        MainApp.instance().startActivity(i);
     }
 
 }
