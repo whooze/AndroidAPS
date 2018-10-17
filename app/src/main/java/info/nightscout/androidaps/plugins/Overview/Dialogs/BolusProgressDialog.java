@@ -65,6 +65,11 @@ public class BolusProgressDialog extends DialogFragment implements View.OnClickL
         statusView.setText(MainApp.gs(R.string.waitingforpump));
         setCancelable(false);
         stopPressed = false;
+        view.setOnFocusChangeListener((v, hasFocus) -> {
+            if (bolusEnded()) {
+                dismiss();
+            }
+        });
         return view;
     }
 
@@ -73,10 +78,7 @@ public class BolusProgressDialog extends DialogFragment implements View.OnClickL
         super.onResume();
         if (L.isEnabled(L.UI))
             log.debug("onResume");
-        if (!ConfigBuilderPlugin.getPlugin().getCommandQueue().bolusInQueue()) {
-            bolusEnded = true;
-        }
-        if (bolusEnded) {
+        if (bolusEnded()) {
             dismiss();
         } else {
             if (getDialog() != null)
@@ -86,6 +88,13 @@ public class BolusProgressDialog extends DialogFragment implements View.OnClickL
             if (L.isEnabled(L.UI))
                 log.debug("onResume running");
         }
+    }
+
+    public boolean bolusEnded() {
+        if (!ConfigBuilderPlugin.getPlugin().getCommandQueue().bolusInQueue()) {
+            bolusEnded = true;
+        }
+        return bolusEnded;
     }
 
     @Override
