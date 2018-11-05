@@ -306,7 +306,8 @@ public class LoopPlugin extends PluginBase {
             }
 
             // Prepare for pumps using % basals
-            if (pump.getPumpDescription().tempBasalStyle == PumpDescription.PERCENT) {
+            //TODO: So far applyTBRRequest() only allows percentages on a virtual pump. see todo there.
+            if (pump.getPumpDescription().tempBasalStyle == PumpDescription.PERCENT && VirtualPumpPlugin.getPlugin().isEnabled(PluginType.PUMP)) {
                 result.usePercent = true;
             }
             result.percent = (int) (result.rate / profile.getBasal() * 100);
@@ -476,11 +477,12 @@ public class LoopPlugin extends PluginBase {
 
     /**
      * expect absolute request and allow both absolute and percent response based on pump capabilities
-     * TODO: update pump drivers to support APS request in %
+     * TODO: update pump drivers to support APS request in %; Make sure, constraints are checked correctly as percentagea and absolute constraints are independent
      */
 
     public void applyTBRRequest(APSResult request, Profile profile, Callback callback) {
-        boolean allowPercentage = VirtualPumpPlugin.getPlugin().isEnabled(PluginType.PUMP);
+        //TODO: even on a virtual pump not all pumps can support percentage. Use the same one -> && request.usePercent
+        boolean allowPercentage = VirtualPumpPlugin.getPlugin().isEnabled(PluginType.PUMP) && request.usePercent;
 
         if (!request.tempBasalRequested) {
             if (callback != null) {
