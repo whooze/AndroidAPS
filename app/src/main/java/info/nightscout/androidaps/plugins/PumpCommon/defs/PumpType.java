@@ -77,7 +77,7 @@ public enum PumpType {
     DanaRS("DanaRS", 0.05d, null, //
             new DoseSettings(0.05d, 30, 8*60, 0.05d), //
             PumpTempBasalType.Percent, //
-            new DoseSettings(10d, 60, 24*60, 0d, 200d), PumpCapability.BasalRate_Duration15and30minAllowed, //
+            new DoseSettings(10d, 60, 24*60, 0d, 500d), PumpCapability.BasalRate_Duration15and30minAllowed, //
             0.04d, 0.01d, null, PumpCapability.DanaWithHistoryCapabilities),
 
     DanaRv2("DanaRv2", DanaRS),
