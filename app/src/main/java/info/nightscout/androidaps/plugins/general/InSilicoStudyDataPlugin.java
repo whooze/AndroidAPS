@@ -1,9 +1,7 @@
-package info.nightscout.androidaps.plugins.Source;
+package info.nightscout.androidaps.plugins.general;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
-import android.support.v4.content.FileProvider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,29 +13,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import info.nightscout.androidaps.BuildConfig;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.interfaces.BgSourceInterface;
 import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.interfaces.PluginDescription;
 import info.nightscout.androidaps.interfaces.PluginType;
 import info.nightscout.androidaps.logging.L;
+import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
 
-public class SourceFilePlugin extends PluginBase implements BgSourceInterface {
+public class InSilicoStudyDataPlugin extends PluginBase implements BgSourceInterface {
 
     private static Logger log = LoggerFactory.getLogger(L.BGSOURCE);
 
-    private static SourceFilePlugin plugin = null;
+    private static InSilicoStudyDataPlugin plugin = null;
 
     private Context context;
 
-    public static SourceFilePlugin getPlugin(Context context) {
+    public static InSilicoStudyDataPlugin getPlugin(Context context) {
         if (plugin == null)
-            plugin = new SourceFilePlugin(context);
+            plugin = new InSilicoStudyDataPlugin(context);
         return plugin;
     }
 
-    private SourceFilePlugin(Context context) {
+    private InSilicoStudyDataPlugin(Context context) {
         super(new PluginDescription()
                 .mainType(PluginType.BGSOURCE)
                 .fragmentClass(BGSourceFragment.class.getName())
@@ -61,9 +59,9 @@ public class SourceFilePlugin extends PluginBase implements BgSourceInterface {
         // not necessary?
     }
 
-    public void readDataFromFile() throws IOException {
+    public void exec(String input, String output) throws IOException {
         File dir = new File(context.getExternalFilesDir(null), "imports");
-        File importFile = new File(dir, "testfile.json");
+        File importFile = new File(dir, input);
 
         InputStream is = new FileInputStream(importFile);
 

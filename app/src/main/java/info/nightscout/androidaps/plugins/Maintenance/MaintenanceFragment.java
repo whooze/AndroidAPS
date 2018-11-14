@@ -14,7 +14,7 @@ import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
 import info.nightscout.androidaps.plugins.Maintenance.activities.LogSettingActivity;
-import info.nightscout.androidaps.plugins.Source.SourceFilePlugin;
+import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 
 /**
@@ -80,9 +80,9 @@ public class MaintenanceFragment extends Fragment {
         });
 
         view.findViewById(R.id.read_source_file).setOnClickListener(view1 -> {
-            SourceFilePlugin plugin = MainApp.getSpecificPlugin(SourceFilePlugin.class);
+            InSilicoStudyDataPlugin plugin = MainApp.getSpecificPlugin(InSilicoStudyDataPlugin.class);
             try {
-                plugin.readDataFromFile();
+                plugin.exec("input.txt", "output.txt");
             } catch (IOException e) {
                 e.printStackTrace();
             }
