@@ -22,11 +22,13 @@ import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.DetailedBolusInfo;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
+import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.Source;
 import info.nightscout.androidaps.db.TemporaryBasal;
@@ -234,13 +236,13 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         // read TBR
         // Insulin_infusion ***************************************************
         // Time 	 	 	 	 	 Basal rate
-        // (dd/mm/yyyy hh:mm) 	 	 (U)
-        // 27/07/2018 08:00 	 	 12.000000 R
-        // 27/07/2018 08:05 	 	 0.405618 R
-        // 27/07/2018 13:00 	 	 12.000000 R
+        // (dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)
+        // 28/07/2018 22:35 	 	 1.800000 R
+        // 28/07/2018 22:40 	 	 1.800000 R
+        // 28/07/2018 22:45 	 	 1.200000 R
         if (!readUpTo(reader, "Insulin_infusion")) return false;
 
-        reader.readLine(); // skip header "Time Bolus"
+        reader.readLine(); // skip header "Time Basal rate"
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)"
 
         while ((line = reader.readLine()) != null && !line.equals("")) {
@@ -255,6 +257,32 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                     TreatmentsPlugin.getPlugin().addToHistoryTempBasal(temporaryBasal);
                 } else {
                     log.warn("Ignoring TBR: " + e.log());
+                }
+            }
+        }
+
+        // read CGM
+        // Glucose_concentration ***************************************************
+        // Time 	 	 	 	 	 conc
+        // (dd/mm/yyyy hh:mm) 	 	 (mmol/L)
+        // 28/07/2018 09:51 	 	 9.082348
+        // 28/07/2018 09:52 	 	 9.058853
+        // 28/07/2018 09:53 	 	 9.035480
+        if (!readUpTo(reader, "Glucose_concentration")) return false;
+
+        reader.readLine(); // skip header "Time conc"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (mmol/L)"
+
+        while ((line = reader.readLine()) != null && !line.equals("")) {
+            InputEntry e = parseEntry(line);
+            if (e != null) {
+                if (e.date <= DateUtil.now()) {
+                    BgReading bgReading = new BgReading()
+                            .date(e.date)
+                            .value(e.value * Constants.MMOLL_TO_MGDL);
+                    MainApp.getDbHelper().createIfNotExists(bgReading, "G5 Native");
+                } else {
+                    log.warn("Ignoring BG: " + e.log());
                 }
             }
         }
