@@ -39,6 +39,7 @@ import info.nightscout.androidaps.plugins.Food.FoodPlugin;
 import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
 import info.nightscout.androidaps.plugins.Treatments.Treatment;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
+import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.T;
 
 public class InSilicoStudyDataPlugin extends PluginBase {
@@ -194,7 +195,37 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 t.carbs = e.value;
                 t.source = Source.USER;
                 t.notes = e.extra;
-                TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
+                if (t.date <= DateUtil.now())
+                    TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
+                else
+                    log.warn("Ignoring: " + e.log());
+            }
+        }
+
+        // read bolus
+        // Insulin_bolus ***************************************************
+        // Time 	 	 	 	 	 Bolus
+        // (dd/mm/yyyy hh:mm) 	 	 (U)
+        // 27/07/2018 08:00 	 	 12.000000 R
+        // 27/07/2018 08:05 	 	 0.405618 R
+        // 27/07/2018 13:00 	 	 12.000000 R
+        if (!readUpTo(reader, "Insulin_bolus")) return false;
+
+        reader.readLine(); // skip header "Time Bolus"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U)"
+
+        while ((line = reader.readLine()) != null && !line.equals("")) {
+            InputEntry e = parseEntry(line);
+            if (e != null) {
+                DetailedBolusInfo t = new DetailedBolusInfo();
+                t.date = e.date + T.secs(1).msecs(); // to be sure it's different from carbs
+                t.insulin = e.value;
+                t.source = Source.USER;
+                t.notes = e.extra;
+                if (t.date <= DateUtil.now())
+                    TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
+                else
+                    log.warn("Ignoring: " + e.log());
             }
         }
 
