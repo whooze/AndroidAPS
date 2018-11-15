@@ -29,12 +29,14 @@ import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.Source;
+import info.nightscout.androidaps.db.TemporaryBasal;
 import info.nightscout.androidaps.interfaces.BgSourceInterface;
 import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.interfaces.PluginDescription;
 import info.nightscout.androidaps.interfaces.PluginType;
 import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.plugins.Careportal.Dialogs.NewNSTreatmentDialog;
+import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
 import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
 import info.nightscout.androidaps.plugins.Treatments.Treatment;
@@ -198,7 +200,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 if (t.date <= DateUtil.now())
                     TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
                 else
-                    log.warn("Ignoring: " + e.log());
+                    log.warn("Ignoring CARBS: " + e.log());
             }
         }
 
@@ -225,7 +227,35 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 if (t.date <= DateUtil.now())
                     TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
                 else
-                    log.warn("Ignoring: " + e.log());
+                    log.warn("Ignoring BOLUS: " + e.log());
+            }
+        }
+
+        // read TBR
+        // Insulin_infusion ***************************************************
+        // Time 	 	 	 	 	 Basal rate
+        // (dd/mm/yyyy hh:mm) 	 	 (U)
+        // 27/07/2018 08:00 	 	 12.000000 R
+        // 27/07/2018 08:05 	 	 0.405618 R
+        // 27/07/2018 13:00 	 	 12.000000 R
+        if (!readUpTo(reader, "Insulin_infusion")) return false;
+
+        reader.readLine(); // skip header "Time Bolus"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)"
+
+        while ((line = reader.readLine()) != null && !line.equals("")) {
+            InputEntry e = parseEntry(line);
+            if (e != null) {
+                if (e.date <= DateUtil.now() && ProfileFunctions.getInstance().getProfile().getBasal(e.date) != e.value) {
+                    TemporaryBasal temporaryBasal = new TemporaryBasal()
+                            .source(Source.USER)
+                            .date(e.date)
+                            .absolute(e.value)
+                            .duration(5);
+                    TreatmentsPlugin.getPlugin().addToHistoryTempBasal(temporaryBasal);
+                } else {
+                    log.warn("Ignoring TBR: " + e.log());
+                }
             }
         }
 
