@@ -12,6 +12,7 @@ import com.crashlytics.android.answers.CustomEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.data.Profile;
@@ -48,7 +49,7 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "");
         wl.acquire();
-
+        checkStudy();
         LocalAlertUtils.shortenSnoozeInterval();
         LocalAlertUtils.checkStaleBGAlert();
         checkPump();
@@ -57,6 +58,25 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         if (L.isEnabled(L.CORE))
             log.debug("KeepAlive received");
         wl.release();
+    }
+
+    private void checkStudy() {
+        if(!Config.POZNANSTUDY) return;
+
+        //TODO poznanstudy
+
+        //TODO: read TDDs off the pump once a day
+        /*TODO: export to SDcard as zip with date added:
+            once a day?
+                * Today's therapy settings?
+                * Today's profile?
+           Once a week?
+                *  Glucose values
+                *  TDDs, Basis, Bolus as list
+                *  Carbs, Boluses, Treatments, ...
+         */
+
+
     }
 
     private void checkPump() {

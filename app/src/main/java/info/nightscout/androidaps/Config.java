@@ -11,7 +11,10 @@ public class Config {
     public static final boolean NSCLIENT = BuildConfig.FLAVOR.equals("nsclient") || BuildConfig.FLAVOR.equals("nsclient2");
     public static final boolean PUMPCONTROL = BuildConfig.FLAVOR.equals("pumpcontrol");
 
-    public static final boolean PUMPDRIVERS = BuildConfig.FLAVOR.equals("full") || BuildConfig.FLAVOR.equals("pumpcontrol");
+    public static final boolean PUMPDRIVERS = BuildConfig.FLAVOR.equals("full") || BuildConfig.FLAVOR.equals("pumpcontrol") || BuildConfig.FLAVOR.equals("poznan_study");
+
+    public static final boolean POZNANSTUDY = BuildConfig.FLAVOR.equals("poznan_study");
+
 
     public static final boolean ACTION = !NSCLIENT;
     public static final boolean MDI = !NSCLIENT;
