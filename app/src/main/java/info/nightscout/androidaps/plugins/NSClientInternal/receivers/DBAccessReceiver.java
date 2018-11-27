@@ -20,6 +20,7 @@ import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.plugins.NSClientInternal.NSClientPlugin;
 import info.nightscout.androidaps.plugins.NSClientInternal.UploadQueue;
 import info.nightscout.androidaps.plugins.NSClientInternal.broadcasts.BroadcastTreatment;
+import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.SP;
 
@@ -107,7 +108,9 @@ public class DBAccessReceiver extends BroadcastReceiver {
                     UploadQueue.add(dbr);
                 }
                 if (collection.equals("treatments")) {
-                    generateTreatmentOfflineBroadcast(dbr);
+                    // speed up parsing data during study
+                    if (InSilicoStudyDataPlugin.getPlugin() != null && !InSilicoStudyDataPlugin.getPlugin().inStudy())
+                        generateTreatmentOfflineBroadcast(dbr);
                 }
             }
 

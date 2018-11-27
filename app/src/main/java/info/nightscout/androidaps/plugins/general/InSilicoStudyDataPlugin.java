@@ -1,7 +1,6 @@
 package info.nightscout.androidaps.plugins.general;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
@@ -17,7 +16,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,24 +24,36 @@ import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.DetailedBolusInfo;
-import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.Source;
 import info.nightscout.androidaps.db.TemporaryBasal;
-import info.nightscout.androidaps.interfaces.BgSourceInterface;
+import info.nightscout.androidaps.events.EventRefreshGui;
 import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.interfaces.PluginDescription;
 import info.nightscout.androidaps.interfaces.PluginType;
 import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.plugins.Careportal.Dialogs.NewNSTreatmentDialog;
+import info.nightscout.androidaps.plugins.ConfigBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
+import info.nightscout.androidaps.plugins.ConstraintsObjectives.ObjectivesPlugin;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
+import info.nightscout.androidaps.plugins.Loop.LoopPlugin;
+import info.nightscout.androidaps.plugins.NSClientInternal.NSClientPlugin;
+import info.nightscout.androidaps.plugins.OpenAPSAMA.OpenAPSAMAPlugin;
+import info.nightscout.androidaps.plugins.OpenAPSMA.OpenAPSMAPlugin;
+import info.nightscout.androidaps.plugins.OpenAPSSMB.OpenAPSSMBPlugin;
 import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
-import info.nightscout.androidaps.plugins.Treatments.Treatment;
+import info.nightscout.androidaps.plugins.Source.SourceDexcomG5Plugin;
+import info.nightscout.androidaps.plugins.Source.SourceGlimpPlugin;
+import info.nightscout.androidaps.plugins.Source.SourceMM640gPlugin;
+import info.nightscout.androidaps.plugins.Source.SourceNSClientPlugin;
+import info.nightscout.androidaps.plugins.Source.SourcePoctechPlugin;
+import info.nightscout.androidaps.plugins.Source.SourceXdripPlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 import info.nightscout.utils.DateUtil;
+import info.nightscout.utils.SP;
 import info.nightscout.utils.T;
 
 public class InSilicoStudyDataPlugin extends PluginBase {
@@ -54,9 +64,17 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
     private Context context;
 
+    private final String ID_KEY = "InSilicoID";
+    private boolean importUsed = false;
+
     public static InSilicoStudyDataPlugin getPlugin(Context context) {
         if (plugin == null)
             plugin = new InSilicoStudyDataPlugin(context);
+        return plugin;
+    }
+
+    @Nullable
+    public static InSilicoStudyDataPlugin getPlugin() {
         return plugin;
     }
 
@@ -73,10 +91,47 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         this.context = context;
     }
 
+    public boolean inStudy() {
+        return importUsed;
+    }
 
-    public void exec(String input, String output) throws IOException {
-        clearDatabase();
+    public void exec(String input, String output, Boolean forceClear) throws IOException {
+        importUsed = true;
+        if (forceClear)
+            clearDatabase();
+        configEnvironment();
         importFile(input);
+    }
+
+    private void configEnvironment() {
+        NSClientPlugin.getPlugin().setPluginEnabled(PluginType.GENERAL, false);
+        NSClientPlugin.getPlugin().setFragmentVisible(PluginType.GENERAL, false);
+
+        MainApp.removePlugin(ObjectivesPlugin.getPlugin());
+
+        LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, true);
+        LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, true);
+        SP.putString(R.string.key_aps_mode, "closed");
+
+        OpenAPSMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
+        OpenAPSAMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
+        OpenAPSSMBPlugin.getPlugin().setPluginEnabled(PluginType.APS, true);
+        OpenAPSSMBPlugin.getPlugin().setFragmentVisible(PluginType.APS, true);
+
+        SourceDexcomG5Plugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, true);
+        SourceGlimpPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
+        SourceMM640gPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
+        SourceNSClientPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
+        SourcePoctechPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
+        SourceXdripPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
+
+        // how to detect max values
+        // is it possible from age, weight and sum of basal rates?
+
+        // what sensitivity plugin ?
+
+        ConfigBuilderPlugin.getPlugin().storeSettings("InSilico");
+        MainApp.bus().post(new EventRefreshGui(true));
     }
 
     private void clearDatabase() {
@@ -95,8 +150,14 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         String line;
-        int i;
 
+        line = reader.readLine(); // ID: adult#001
+
+        if (!SP.getString(ID_KEY, "").equals(line)) {
+            // new person
+            clearDatabase();
+            SP.putString(ID_KEY, line);
+        }
 
         log.debug("========== FILE ==========");
 
@@ -175,6 +236,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             ProfileStore profileStore = new ProfileStore(json);
 
             ProfileSwitch profileSwitch = NewNSTreatmentDialog.prepareProfileSwitch(profileStore, "InSilico", 0, 100, 0, 100000);
+            profileSwitch.source = Source.NIGHTSCOUT;
             TreatmentsPlugin.getPlugin().addToHistoryProfileSwitch(profileSwitch);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -197,7 +259,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 DetailedBolusInfo t = new DetailedBolusInfo();
                 t.date = e.date;
                 t.carbs = e.value;
-                t.source = Source.USER;
+                t.source = Source.NIGHTSCOUT;
                 t.notes = e.extra;
                 if (t.date <= DateUtil.now())
                     TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
@@ -224,7 +286,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 DetailedBolusInfo t = new DetailedBolusInfo();
                 t.date = e.date + T.secs(1).msecs(); // to be sure it's different from carbs
                 t.insulin = e.value;
-                t.source = Source.USER;
+                t.source = Source.NIGHTSCOUT;
                 t.notes = e.extra;
                 if (t.date <= DateUtil.now())
                     TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
@@ -250,7 +312,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             if (e != null) {
                 if (e.date <= DateUtil.now() && ProfileFunctions.getInstance().getProfile().getBasal(e.date) != e.value) {
                     TemporaryBasal temporaryBasal = new TemporaryBasal()
-                            .source(Source.USER)
+                            .source(Source.NIGHTSCOUT)
                             .date(e.date)
                             .absolute(e.value)
                             .duration(5);
@@ -340,7 +402,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             e.value = Double.parseDouble(v);
             e.extra = m.group(8);
 
-            log.debug(e.log());
+            //log.debug(e.log());
             return e;
         }
         return null;
