@@ -28,10 +28,12 @@ import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.DetailedBolusInfo;
+import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.Source;
+import info.nightscout.androidaps.db.TempTarget;
 import info.nightscout.androidaps.db.TemporaryBasal;
 import info.nightscout.androidaps.events.EventRefreshGui;
 import info.nightscout.androidaps.interfaces.PluginBase;
@@ -43,6 +45,7 @@ import info.nightscout.androidaps.plugins.ConfigBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
 import info.nightscout.androidaps.plugins.ConstraintsObjectives.ObjectivesPlugin;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
+import info.nightscout.androidaps.plugins.IobCobCalculator.IobCobCalculatorPlugin;
 import info.nightscout.androidaps.plugins.IobCobCalculator.events.EventIobCalculationProgress;
 import info.nightscout.androidaps.plugins.Loop.LoopPlugin;
 import info.nightscout.androidaps.plugins.NSClientInternal.NSClientPlugin;
@@ -71,6 +74,15 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     private static Logger log = LoggerFactory.getLogger(L.DATABASE);
 
     private static InSilicoStudyDataPlugin plugin = null;
+
+    // ********* CONSTANTS ***********
+
+    private final String TARGET = "5.5";
+    private final double HYPO_TT_TARGET = 7.5;
+    private final int HYPO_TT_DURATION = 60;
+
+    // ********* CONSTANTS ***********
+
 
     private Context context;
     HandlerThread handlerThread;
@@ -258,8 +270,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             jp.put("carbratio", ics);
             jp.put("sens", isfs);
             jp.put("basal", basals);
-            jp.put("target_low", new JSONArray("[{\"time\":\"00:00\",\"value\":\"5.5\",\"timeAsSeconds\":\"0\"}]"));
-            jp.put("target_high", new JSONArray("[{\"time\":\"00:00\",\"value\":\"5.5\",\"timeAsSeconds\":\"0\"}]"));
+            jp.put("target_low", new JSONArray("[{\"time\":\"00:00\",\"value\":\"" + TARGET + "\",\"timeAsSeconds\":\"0\"}]"));
+            jp.put("target_high", new JSONArray("[{\"time\":\"00:00\",\"value\":\"" + TARGET + "\",\"timeAsSeconds\":\"0\"}]"));
             store.put("InSilico", jp);
 
             ProfileStore profileStore = new ProfileStore(json);
@@ -293,9 +305,22 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 t.carbs = e.value;
                 t.source = Source.NIGHTSCOUT;
                 t.notes = e.extra;
-                if (t.date <= DateUtil.now())
+                if (t.date <= DateUtil.now()) {
                     TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
-                else
+
+                    // Start hypo target if needed
+                    BgReading actual = IobCobCalculatorPlugin.getPlugin().findOlder(t.date);
+                    if (actual != null && actual.value < 72) {
+                        TempTarget tempTarget = new TempTarget()
+                                .date(t.date)
+                                .duration(HYPO_TT_DURATION)
+                                .reason(MainApp.gs(R.string.hypo))
+                                .source(Source.USER)
+                                .low(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL))
+                                .high(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL));
+                        TreatmentsPlugin.getPlugin().addToHistoryTempTarget(tempTarget);
+                    }
+                } else
                     log.warn("Ignoring CARBS: " + e.log());
             }
         }
