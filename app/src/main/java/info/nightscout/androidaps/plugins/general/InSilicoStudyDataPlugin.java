@@ -1,6 +1,10 @@
 package info.nightscout.androidaps.plugins.general;
 
 import android.content.Context;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
@@ -39,11 +43,15 @@ import info.nightscout.androidaps.plugins.ConfigBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
 import info.nightscout.androidaps.plugins.ConstraintsObjectives.ObjectivesPlugin;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
+import info.nightscout.androidaps.plugins.IobCobCalculator.events.EventIobCalculationProgress;
 import info.nightscout.androidaps.plugins.Loop.LoopPlugin;
 import info.nightscout.androidaps.plugins.NSClientInternal.NSClientPlugin;
 import info.nightscout.androidaps.plugins.OpenAPSAMA.OpenAPSAMAPlugin;
 import info.nightscout.androidaps.plugins.OpenAPSMA.OpenAPSMAPlugin;
 import info.nightscout.androidaps.plugins.OpenAPSSMB.OpenAPSSMBPlugin;
+import info.nightscout.androidaps.plugins.ProfileLocal.LocalProfilePlugin;
+import info.nightscout.androidaps.plugins.ProfileNS.NSProfilePlugin;
+import info.nightscout.androidaps.plugins.ProfileSimple.SimpleProfilePlugin;
 import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
 import info.nightscout.androidaps.plugins.Source.SourceDexcomG5Plugin;
 import info.nightscout.androidaps.plugins.Source.SourceGlimpPlugin;
@@ -52,6 +60,8 @@ import info.nightscout.androidaps.plugins.Source.SourceNSClientPlugin;
 import info.nightscout.androidaps.plugins.Source.SourcePoctechPlugin;
 import info.nightscout.androidaps.plugins.Source.SourceXdripPlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
+import info.nightscout.androidaps.receivers.SourceFileReceiver;
+import info.nightscout.androidaps.services.Intents;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.SP;
 import info.nightscout.utils.T;
@@ -63,6 +73,10 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     private static InSilicoStudyDataPlugin plugin = null;
 
     private Context context;
+    HandlerThread handlerThread;
+    Handler handler;
+    private static SourceFileReceiver sfReciever = new SourceFileReceiver();
+
 
     private final String ID_KEY = "InSilicoID";
     private boolean importUsed = false;
@@ -89,6 +103,14 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         );
 
         this.context = context;
+
+        handlerThread = new HandlerThread(InSilicoStudyDataPlugin.class.getName());
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+    }
+
+    public void registerReceiver() {
+        context.registerReceiver(sfReciever, new IntentFilter(Intents.ACTION_READ_SF), null, handler); // Will not run on main thread
     }
 
     public boolean inStudy() {
@@ -125,6 +147,11 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         SourcePoctechPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
         SourceXdripPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
 
+        LocalProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, true);
+        LocalProfilePlugin.getPlugin().setFragmentVisible(PluginType.PROFILE, true);
+        NSProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, false);
+        SimpleProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, false);
+
         // how to detect max values
         // is it possible from age, weight and sum of basal rates?
 
@@ -160,6 +187,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         }
 
         log.debug("========== FILE ==========");
+
+        MainApp.bus().post(new EventIobCalculationProgress("Loading Profile"));
 
         // read basal rates
         // 1.54 1.54 1.54 1.54 1.54 1.54 1.54 1.54 1.54 1.54 1.54 1.54
@@ -238,9 +267,12 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             ProfileSwitch profileSwitch = NewNSTreatmentDialog.prepareProfileSwitch(profileStore, "InSilico", 0, 100, 0, 100000);
             profileSwitch.source = Source.NIGHTSCOUT;
             TreatmentsPlugin.getPlugin().addToHistoryProfileSwitch(profileSwitch);
+            SystemClock.sleep(2000); // wait for processing
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        MainApp.bus().post(new EventIobCalculationProgress("Loading carbs"));
 
         // read meals
         // Enteral_bolus (meal) ********************************************
@@ -268,6 +300,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             }
         }
 
+        MainApp.bus().post(new EventIobCalculationProgress("Loading boluses"));
+
         // read bolus
         // Insulin_bolus ***************************************************
         // Time 	 	 	 	 	 Bolus
@@ -294,6 +328,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                     log.warn("Ignoring BOLUS: " + e.log());
             }
         }
+
+        MainApp.bus().post(new EventIobCalculationProgress("Loading TBRs"));
 
         // read TBR
         // Insulin_infusion ***************************************************
@@ -323,6 +359,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             }
         }
 
+        MainApp.bus().post(new EventIobCalculationProgress("Loading BGs"));
+
         // read CGM
         // Glucose_concentration ***************************************************
         // Time 	 	 	 	 	 conc
@@ -348,6 +386,32 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 }
             }
         }
+
+        // read start time
+        // Start ******************************************
+        // Time (local time) 	 	 	 	 Bolus
+        //        (dd/mm/yyyy hh:mm) 	 	 	 	 (Y/N)
+        // 28/07/2018 22:50 	 	 		   N
+        if (!readUpTo(reader, "Start")) return false;
+
+        reader.readLine(); // skip header "Time (local time) 	 	 	 	 Bolus"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 	 	 (Y/N)"
+
+        line = reader.readLine();
+        InputEntry start = parseDate(line);
+
+        if (start.date <= DateUtil.now() - T.mins(2).msecs() || start.date > DateUtil.now()) {
+            log.debug("Wrong start time: " + DateUtil.dateAndTimeFullString(start.date));
+            //return false;
+        }
+
+        line = reader.readLine();
+        if (!line.startsWith("END")) {
+            log.debug("Missing END: ");
+            return false;
+        }
+
+        MainApp.bus().post(new EventIobCalculationProgress("Data Loaded"));
 
         log.debug("========== FILE ==========");
         return true;
@@ -401,6 +465,30 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             e.date = calendar.getTimeInMillis();
             e.value = Double.parseDouble(v);
             e.extra = m.group(8);
+
+            //log.debug(e.log());
+            return e;
+        }
+        return null;
+    }
+
+    @Nullable
+    InputEntry parseDate(String line) {
+        String pattern = "(\\d+)\\/(\\d+)\\/(\\d+)\\s+(\\d+)\\:(\\d+)(.*)"; // 27/07/2018 08:00 	 	 N
+
+        Matcher m = Pattern.compile(pattern).matcher(line);
+        if (m.find()) {
+            Calendar calendar = new GregorianCalendar();
+            calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(m.group(1)));
+            calendar.set(Calendar.MONTH, Integer.parseInt(m.group(2)) - 1);
+            calendar.set(Calendar.YEAR, Integer.parseInt(m.group(3)));
+            calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(m.group(4)));
+            calendar.set(Calendar.MINUTE, Integer.parseInt(m.group(5)));
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+
+            InputEntry e = new InputEntry();
+            e.date = calendar.getTimeInMillis();
 
             //log.debug(e.log());
             return e;

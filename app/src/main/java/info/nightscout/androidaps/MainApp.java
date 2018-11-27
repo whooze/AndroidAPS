@@ -80,7 +80,6 @@ import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
 import info.nightscout.androidaps.receivers.DataReceiver;
 import info.nightscout.androidaps.receivers.KeepAliveReceiver;
 import info.nightscout.androidaps.receivers.NSAlarmReceiver;
-import info.nightscout.androidaps.receivers.SourceFileReceiver;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.utils.FabricPrivacy;
 import io.fabric.sdk.android.Fabric;
@@ -103,7 +102,6 @@ public class MainApp extends Application {
     private static NSAlarmReceiver alarmReciever = new NSAlarmReceiver();
     private static AckAlarmReceiver ackAlarmReciever = new AckAlarmReceiver();
     private static DBAccessReceiver dbAccessReciever = new DBAccessReceiver();
-    private static SourceFileReceiver sfReciever = new SourceFileReceiver();
     private LocalBroadcastManager lbm;
 
     public static boolean devBranch;
@@ -140,8 +138,6 @@ public class MainApp extends Application {
         devBranch = BuildConfig.VERSION.contains("dev");
 
         sBus = L.isEnabled(L.EVENTS) && devBranch ? new LoggingBus(ThreadEnforcer.ANY) : new Bus(ThreadEnforcer.ANY);
-
-        registerLocalBroadcastReceiver();
 
         if (pluginsList == null) {
             pluginsList = new ArrayList<>();
@@ -195,6 +191,8 @@ public class MainApp extends Application {
             pluginsList.add(ConfigBuilderPlugin.getPlugin());
 
             ConfigBuilderPlugin.getPlugin().initialize();
+
+            registerLocalBroadcastReceiver();
         }
 
         NSUpload.uploadAppStart();
@@ -236,7 +234,8 @@ public class MainApp extends Application {
         //register dbaccess
         lbm.registerReceiver(dbAccessReciever, new IntentFilter(Intents.ACTION_DATABASE));
 
-        lbm.registerReceiver(sfReciever, new IntentFilter(Intents.ACTION_READ_SF));
+        // InSilico study data receiver
+        InSilicoStudyDataPlugin.getPlugin().registerReceiver();
     }
 
     private void startKeepAliveService() {
