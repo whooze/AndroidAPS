@@ -141,10 +141,16 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         configEnvironment();
         importFile(input);
 
+        MainApp.bus().post(new EventIobCalculationProgress("Processing data"));
+        SystemClock.sleep(3000);
+
+        MainApp.bus().post(new EventIobCalculationProgress("Running calculation"));
         OpenAPSSMBPlugin.getPlugin().invoke("InSilico", false);
         APSResult result = OpenAPSSMBPlugin.getPlugin().getLastAPSResult();
-        if (result != null)
+        if (result != null) {
+            MainApp.bus().post(new EventIobCalculationProgress("Writing output file"));
             exportFile(output, result);
+        }
     }
 
     private void configEnvironment() {
@@ -408,14 +414,17 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         reader.readLine(); // skip header "Time conc"
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (mmol/L)"
 
+        long last_date = 0;
+
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
             if (e != null) {
-                if (e.date <= DateUtil.now()) {
+                if (e.date <= DateUtil.now() && e.date >= (last_date + T.mins(5).msecs())) {
                     BgReading bgReading = new BgReading()
                             .date(e.date)
                             .value(e.value * Constants.MMOLL_TO_MGDL);
                     MainApp.getDbHelper().createIfNotExists(bgReading, "G5 Native");
+                    last_date = e.date;
                 } else {
                     log.warn("Ignoring BG: " + e.log());
                 }
