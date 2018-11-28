@@ -76,7 +76,7 @@ import info.nightscout.androidaps.plugins.Source.SourceXdripPlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.plugins.Wear.WearPlugin;
 import info.nightscout.androidaps.plugins.XDripStatusline.StatuslinePlugin;
-import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
+import info.nightscout.androidaps.plugins.general.inSilicoData.InSilicoStudyDataPlugin;
 import info.nightscout.androidaps.receivers.DataReceiver;
 import info.nightscout.androidaps.receivers.KeepAliveReceiver;
 import info.nightscout.androidaps.receivers.NSAlarmReceiver;

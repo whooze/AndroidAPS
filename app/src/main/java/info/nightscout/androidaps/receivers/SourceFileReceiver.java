@@ -6,8 +6,7 @@ import android.content.Intent;
 
 import java.io.IOException;
 
-import info.nightscout.androidaps.MainApp;
-import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
+import info.nightscout.androidaps.plugins.general.inSilicoData.InSilicoStudyDataPlugin;
 
 public class SourceFileReceiver extends BroadcastReceiver {
 

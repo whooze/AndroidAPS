@@ -1,4 +1,4 @@
-package info.nightscout.androidaps.plugins.general;
+package info.nightscout.androidaps.plugins.general.inSilicoData;
 
 import android.content.Context;
 import android.content.IntentFilter;
@@ -14,11 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
@@ -47,6 +51,7 @@ import info.nightscout.androidaps.plugins.ConstraintsObjectives.ObjectivesPlugin
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
 import info.nightscout.androidaps.plugins.IobCobCalculator.IobCobCalculatorPlugin;
 import info.nightscout.androidaps.plugins.IobCobCalculator.events.EventIobCalculationProgress;
+import info.nightscout.androidaps.plugins.Loop.APSResult;
 import info.nightscout.androidaps.plugins.Loop.LoopPlugin;
 import info.nightscout.androidaps.plugins.NSClientInternal.NSClientPlugin;
 import info.nightscout.androidaps.plugins.OpenAPSAMA.OpenAPSAMAPlugin;
@@ -135,6 +140,11 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             clearDatabase();
         configEnvironment();
         importFile(input);
+
+        OpenAPSSMBPlugin.getPlugin().invoke("InSilico", false);
+        APSResult result = OpenAPSSMBPlugin.getPlugin().getLastAPSResult();
+        if (result != null)
+            exportFile(output, result);
     }
 
     private void configEnvironment() {
@@ -519,6 +529,30 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             return e;
         }
         return null;
+    }
+
+    private boolean exportFile(String output, APSResult result) throws IOException {
+        File dir = new File(context.getExternalFilesDir(null), "imports");
+        File outputFile = new File(dir, output);
+        OutputStream os = new FileOutputStream(outputFile);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
+
+        writer.write(SP.getString(ID_KEY, "ID: unknown"));
+        writer.newLine();
+        writer.newLine();
+        writer.write("(dd/mm/yyyy  hh:mm)      (U/h)      (U)   \"Diagnostics\"  \"Large change Y/N\"   ");
+        writer.newLine();
+
+        writer.write("29/07/18 00:00  \t \t 2.673857  \t 0.000000 \t\t \"SSM=no\"        \" \" ");
+        writer.newLine();
+        writer.newLine();
+        writer.write("END");
+        writer.newLine();
+
+        writer.write(result.json().toString());
+
+        writer.flush();
+        return true;
     }
 
 }

@@ -14,7 +14,7 @@ import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
 import info.nightscout.androidaps.plugins.Maintenance.activities.LogSettingActivity;
-import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
+import info.nightscout.androidaps.plugins.general.inSilicoData.InSilicoStudyDataPlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 
 /**

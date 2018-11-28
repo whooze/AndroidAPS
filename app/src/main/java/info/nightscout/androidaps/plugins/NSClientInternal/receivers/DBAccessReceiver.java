@@ -20,7 +20,7 @@ import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.plugins.NSClientInternal.NSClientPlugin;
 import info.nightscout.androidaps.plugins.NSClientInternal.UploadQueue;
 import info.nightscout.androidaps.plugins.NSClientInternal.broadcasts.BroadcastTreatment;
-import info.nightscout.androidaps.plugins.general.InSilicoStudyDataPlugin;
+import info.nightscout.androidaps.plugins.general.inSilicoData.InSilicoStudyDataPlugin;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.SP;
 

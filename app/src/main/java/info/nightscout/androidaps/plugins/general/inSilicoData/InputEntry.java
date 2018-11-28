@@ -1,4 +1,4 @@
-package info.nightscout.androidaps.plugins.general;
+package info.nightscout.androidaps.plugins.general.inSilicoData;
 
 import info.nightscout.utils.DateUtil;
 
