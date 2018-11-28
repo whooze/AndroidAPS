@@ -552,7 +552,19 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         writer.write("(dd/mm/yyyy  hh:mm)      (U/h)      (U)   \"Diagnostics\"  \"Large change Y/N\"   ");
         writer.newLine();
 
-        writer.write("29/07/18 00:00  \t \t 2.673857  \t 0.000000 \t\t \"SSM=no\"        \" \" ");
+        if (result.isChangeRequested()) {
+            Calendar calendar = new GregorianCalendar();
+            writer.write(String.format("%02d/%02d/%02d %02d:%02d  \t \t %.3f  \t %.2f \t\t \"SSM=no\"        \" \" ",
+                    calendar.get(Calendar.DAY_OF_MONTH),
+                    calendar.get(Calendar.MONTH) + 1,
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    result.rate,
+                    result.smb
+                    ));
+        }
+        //writer.write("29/07/18 00:00  \t \t 2.673857  \t 0.000000 \t\t \"SSM=no\"        \" \" ");
         writer.newLine();
         writer.newLine();
         writer.write("END");
