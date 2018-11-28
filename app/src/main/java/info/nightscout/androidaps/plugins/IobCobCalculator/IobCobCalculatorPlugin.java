@@ -176,7 +176,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
 
     @Nullable
     public BgReading findOlder(long time) {
-        if (bgReadings.size() == 0)
+        if (bgReadings == null || bgReadings.size() == 0)
             return null;
         BgReading lastFound = bgReadings.get(bgReadings.size() - 1);
         if (lastFound.date > time) return null;
