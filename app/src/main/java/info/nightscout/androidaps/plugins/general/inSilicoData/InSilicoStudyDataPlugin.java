@@ -86,6 +86,9 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     private final double HYPO_TT_TARGET = 7.5;
     private final int HYPO_TT_DURATION = 60;
 
+    private final double MAX_BASAL = 10.0;
+    private final double MAX_IOB = 10.0;
+
     // ********* CONSTANTS ***********
 
 
@@ -151,6 +154,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             MainApp.bus().post(new EventIobCalculationProgress("Writing output file"));
             exportFile(output, result);
         }
+        MainApp.bus().post(new EventIobCalculationProgress(""));
     }
 
     private void configEnvironment() {
@@ -161,7 +165,20 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, true);
         LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, true);
-        SP.putString(R.string.key_aps_mode, "closed");
+        SP.putString(R.string.key_aps_mode, "open");
+
+        SP.putDouble(R.string.key_openapsma_max_basal, MAX_BASAL);
+        SP.putDouble(R.string.key_openapssmb_max_iob, MAX_IOB);
+        SP.putBoolean(R.string.openapsama_useautosens, true);
+        SP.putBoolean(R.string.key_use_smb, true);
+        SP.putBoolean(R.string.key_enableSMB_with_COB, true);
+        SP.putBoolean(R.string.key_enableSMB_with_temptarget, false);
+        SP.putBoolean(R.string.key_enableSMB_always, false);
+        SP.putBoolean(R.string.key_enableSMB_after_carbs, true);
+        SP.putInt(R.string.key_smbmaxminutes, 30);
+        SP.putBoolean(R.string.key_use_uam, true);
+        SP.putBoolean(R.string.key_high_temptarget_raises_sensitivity, true);
+        SP.putBoolean(R.string.key_low_temptarget_lowers_sensitivity, true);
 
         OpenAPSMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
         OpenAPSAMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);

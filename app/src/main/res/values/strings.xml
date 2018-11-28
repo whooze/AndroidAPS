@@ -1216,6 +1216,7 @@
     <string name="sf_settings">SourceFile Settings</string>
     <string name="description_source_file">Reads BG values from a file in the raw directory..</string>
     <string name="read_source_file">Read BG Source file</string>
+    <string name="key_smbmaxminutes" translatable="false">smbmaxminutes</string>
 
     <plurals name="objective_days">
         <item quantity="one">%1$d day</item>
