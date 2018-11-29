@@ -25,6 +25,7 @@ import org.json.JSONObject;
 
 import java.util.List;
 
+import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.Iob;
@@ -212,7 +213,7 @@ public class TreatmentsBolusFragment extends SubscriberFragment implements View.
         deleteFutureTreatments = (Button) view.findViewById(R.id.treatments_delete_future_treatments);
         deleteFutureTreatments.setOnClickListener(this);
 
-        boolean nsUploadOnly = SP.getBoolean(R.string.key_ns_upload_only, false);
+        boolean nsUploadOnly = Config.POZNANSTUDY || SP.getBoolean(R.string.key_ns_upload_only, false);
         if (nsUploadOnly)
             refreshFromNS.setVisibility(View.GONE);
 

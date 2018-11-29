@@ -167,14 +167,14 @@ public class MainApp extends Application {
             if (Config.APS) pluginsList.add(OpenAPSMAPlugin.getPlugin());
             if (Config.APS) pluginsList.add(OpenAPSAMAPlugin.getPlugin());
             if (Config.APS) pluginsList.add(OpenAPSSMBPlugin.getPlugin());
-            pluginsList.add(NSProfilePlugin.getPlugin());
+            if (! Config.POZNANSTUDY) pluginsList.add(NSProfilePlugin.getPlugin());
             if (Config.OTHERPROFILES) pluginsList.add(SimpleProfilePlugin.getPlugin());
             if (Config.OTHERPROFILES) pluginsList.add(LocalProfilePlugin.getPlugin());
             pluginsList.add(TreatmentsPlugin.getPlugin());
             if (Config.SAFETY) pluginsList.add(SafetyPlugin.getPlugin());
             if (Config.APS) pluginsList.add(ObjectivesPlugin.getPlugin());
             pluginsList.add(SourceXdripPlugin.getPlugin());
-            pluginsList.add(SourceNSClientPlugin.getPlugin());
+            if (! Config.POZNANSTUDY) pluginsList.add(SourceNSClientPlugin.getPlugin());
             pluginsList.add(SourceMM640gPlugin.getPlugin());
             pluginsList.add(SourceGlimpPlugin.getPlugin());
             pluginsList.add(SourceDexcomG5Plugin.getPlugin());

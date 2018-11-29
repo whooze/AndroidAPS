@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.db.CareportalEvent;
@@ -52,7 +53,7 @@ public class DataService extends IntentService {
             log.debug("onHandleIntent " + BundleLogger.log(intent.getExtras()));
         }
 
-        boolean acceptNSData = !SP.getBoolean(R.string.key_ns_upload_only, false);
+        boolean acceptNSData = ! (Config.POZNANSTUDY || SP.getBoolean(R.string.key_ns_upload_only, false));
         Bundle bundles = intent.getExtras();
         if (bundles != null && bundles.containsKey("islocal")) {
             acceptNSData = acceptNSData || bundles.getBoolean("islocal");
@@ -70,9 +71,9 @@ public class DataService extends IntentService {
             SourceDexcomG5Plugin.getPlugin().handleNewData(intent);
         } else if (Intents.POCTECH_BG.equals(action)) {
             SourcePoctechPlugin.getPlugin().handleNewData(intent);
-        } else if (Intents.ACTION_NEW_SGV.equals(action)) {
+        } else if (Intents.ACTION_NEW_SGV.equals(action) && ! Config.POZNANSTUDY) {
             SourceNSClientPlugin.getPlugin().handleNewData(intent);
-        } else if (Intents.ACTION_NEW_PROFILE.equals(action)) {
+        } else if (Intents.ACTION_NEW_PROFILE.equals(action) && ! Config.POZNANSTUDY) {
             // always handle Profile if NSProfile is enabled without looking at nsUploadOnly
             NSProfilePlugin.getPlugin().handleNewData(intent);
         } else if (Intents.ACTION_NEW_DEVICESTATUS.equals(action)) {

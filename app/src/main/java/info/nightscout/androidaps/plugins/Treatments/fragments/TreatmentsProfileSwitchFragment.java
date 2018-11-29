@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.logging.L;
@@ -187,7 +188,7 @@ public class TreatmentsProfileSwitchFragment extends SubscriberFragment implemen
 
         context = getContext();
 
-        boolean nsUploadOnly = SP.getBoolean(R.string.key_ns_upload_only, false);
+        boolean nsUploadOnly = Config.POZNANSTUDY || SP.getBoolean(R.string.key_ns_upload_only, false);
         if (nsUploadOnly)
             refreshFromNS.setVisibility(View.GONE);
 
