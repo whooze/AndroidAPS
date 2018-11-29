@@ -55,6 +55,11 @@ android {
             dimension "standard"
             versionName version
         }
+        poznan_study {
+            applicationId "info.nightscout.androidaps"
+            dimension "standard"
+            versionName version
+        }
         pumpcontrol {
             applicationId "info.nightscout.androidaps"
             dimension "standard"

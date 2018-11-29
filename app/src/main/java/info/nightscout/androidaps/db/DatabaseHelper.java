@@ -490,12 +490,16 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         }
     }
 
-    public List<TDD> getTDDs() {
+    public List<TDD> getTDDs(){
+        return getTDDs(10L);
+    }
+
+    public List<TDD> getTDDs(long limit) {
         List<TDD> tddList;
         try {
             QueryBuilder<TDD, String> queryBuilder = getDaoTDD().queryBuilder();
             queryBuilder.orderBy("date", false);
-            queryBuilder.limit(10L);
+            queryBuilder.limit(limit);
             PreparedQuery<TDD> preparedQuery = queryBuilder.prepare();
             tddList = getDaoTDD().query(preparedQuery);
         } catch (SQLException e) {
