@@ -1,5 +1,6 @@
 package info.nightscout.androidaps.receivers;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -25,6 +26,7 @@ import info.nightscout.androidaps.queue.commands.Command;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.FabricPrivacy;
 import info.nightscout.utils.LocalAlertUtils;
+import info.nightscout.utils.SP;
 import info.nightscout.utils.T;
 
 
@@ -64,8 +66,14 @@ public class KeepAliveReceiver extends BroadcastReceiver {
         if(!Config.POZNANSTUDY) return;
 
         //TODO poznanstudy
-
-        //TODO: read TDDs off the pump once a day
+        long lastTDDRead = SP.getLong("lastTDDRead", 0L);
+        long now = System.currentTimeMillis();
+        if (now - lastTDDRead > T.days(1).msecs()) {
+            if (L.isEnabled(L.CORE))
+                log.debug("reading TDDs");
+            ConfigBuilderPlugin.getPlugin().getCommandQueue().loadTDDs(null);
+            SP.putLong("lastTDDRead", now);
+        }
         /*TODO: export to SDcard as zip with date added:
             once a day?
                 * Today's therapy settings?

@@ -34,9 +34,8 @@ import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
  * Save the SQL database to file.
  */
 public class DataExporter {
-    private static Logger log = LoggerFactory.getLogger(L.DATABASE);
-
     private static final Handler handler = new Handler(Looper.getMainLooper());
+    private static Logger log = LoggerFactory.getLogger(L.DATABASE);
 
     private static void toastText(final Context context, final String text) {
         handler.post(() -> Toast.makeText(context, text, Toast.LENGTH_LONG).show());
@@ -61,7 +60,7 @@ public class DataExporter {
         try {
 
             final String dir = getExternalDir();
-            if (!makeSureDirectoryExists(dir)){
+            if (!makeSureDirectoryExists(dir)) {
                 log.debug("Directory does not exist.");
                 return null;
             }
@@ -81,14 +80,14 @@ public class DataExporter {
                 zipOutputStream.putNextEntry(new ZipEntry("export" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
                 printStream = new PrintStream(zipOutputStream);
 
-                //add Treatment and BGlucose Header
+                //add TreatmentsPlugint and BGlucose Header
                 printStream.println("DAY;TIME;TDD;BASAL;BOLUS;PROFILE_BASAL");
                 java.text.DateFormat df = new SimpleDateFormat("dd.MM.yyyy;HH:mm;");
-                List<TDD> historyList = MainApp.getDbHelper().getTDDs();
+                List<TDD> historyList = MainApp.getDbHelper().getTDDs(365);
                 Date date = new Date();
 
-                for (TDD tdd: historyList
-                     ) {
+                for (TDD tdd : historyList
+                        ) {
                     if (tdd.date >= from) {
                         date.setTime(tdd.date);
                         ProfileSwitch profileSwitch = TreatmentsPlugin.getPlugin().getProfileSwitchFromHistory(tdd.date);
@@ -118,14 +117,14 @@ public class DataExporter {
     }
 
     private static boolean makeSureDirectoryExists(String dir) {
-        final File file = new File( dir );
+        final File file = new File(dir);
         return file.exists() || file.mkdirs();
     }
 
     private static String getExternalDir() {
         final StringBuilder sb = new StringBuilder();
-        sb.append( Environment.getExternalStorageDirectory().getAbsolutePath() );
-        sb.append( "/aapsexport" );
+        sb.append(Environment.getExternalStorageDirectory().getAbsolutePath());
+        sb.append("/aapsexport");
         final String dir = sb.toString();
         return dir;
     }
