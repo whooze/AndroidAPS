@@ -25,9 +25,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import info.nightscout.androidaps.MainApp;
+import info.nightscout.androidaps.data.NonOverlappingIntervals;
+import info.nightscout.androidaps.db.BgReading;
+import info.nightscout.androidaps.db.ExtendedBolus;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.TDD;
+import info.nightscout.androidaps.db.TemporaryBasal;
 import info.nightscout.androidaps.logging.L;
+import info.nightscout.androidaps.plugins.Treatments.Treatment;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 
 /**
@@ -77,7 +82,7 @@ public class DataExporter {
 
                 foStream = new FileOutputStream(zipOutputFile);
                 zipOutputStream = new ZipOutputStream(new BufferedOutputStream(foStream));
-                zipOutputStream.putNextEntry(new ZipEntry("export" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
+                zipOutputStream.putNextEntry(new ZipEntry("tdds-" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
                 printStream = new PrintStream(zipOutputStream);
 
                 //add TreatmentsPlugint and BGlucose Header
@@ -85,14 +90,79 @@ public class DataExporter {
                 java.text.DateFormat df = new SimpleDateFormat("dd.MM.yyyy;HH:mm;");
                 List<TDD> historyList = MainApp.getDbHelper().getTDDs(365);
                 Date date = new Date();
-
+                Date dateEnd = new Date();
                 for (TDD tdd : historyList
                         ) {
                     if (tdd.date >= from) {
                         date.setTime(tdd.date);
                         ProfileSwitch profileSwitch = TreatmentsPlugin.getPlugin().getProfileSwitchFromHistory(tdd.date);
-                        printStream.println(df.format(date) + Math.round(tdd.getTotal()) + ";" + Math.round(tdd.basal) + ";" + Math.round(tdd.bolus) + ";" + DecimalFormatter.to2Decimal(profileSwitch.getProfileObject().percentageBasalSum()));
+                        printStream.println(df.format(date) + DecimalFormatter.to2Decimal(tdd.getTotal()) + ";" + DecimalFormatter.to2Decimal(tdd.basal) + ";" + DecimalFormatter.to2Decimal(tdd.bolus) + ";" + DecimalFormatter.to2Decimal(profileSwitch.getProfileObject().percentageBasalSum()));
                     }
+                }
+                printStream.flush();
+                historyList.clear();
+                zipOutputStream.putNextEntry(new ZipEntry("treatments-" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
+                List<Treatment> treatmentList = TreatmentsPlugin.getPlugin().getService().getTreatmentDataFromTime(from, false);
+                printStream.println("DAY;TIME;CARBS;BOLUS;VALID");
+
+                for (Treatment treat : treatmentList
+                        ) {
+                    if (!treat.isSMB) {
+                        date.setTime(treat.date);
+                        printStream.println(df.format(date) + DecimalFormatter.to0Decimal(treat.carbs) + ";" +  DecimalFormatter.to2Decimal(treat.insulin) +";" + treat.isValid );
+                    }
+                }
+                printStream.flush();
+                zipOutputStream.putNextEntry(new ZipEntry("automatic-smb-" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
+                printStream.println("DAY;TIME;BOLUS;VALID");
+
+                for (Treatment treat : treatmentList
+                        ) {
+                    if (treat.isSMB) {
+                        date.setTime(treat.date);
+                        printStream.println(df.format(date)  +  DecimalFormatter.to2Decimal(treat.insulin) +";" + treat.isValid );
+                    }
+                }
+                printStream.flush();
+                treatmentList.clear();
+
+                zipOutputStream.putNextEntry(new ZipEntry("extended-bolus-" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
+                NonOverlappingIntervals<ExtendedBolus> extendedBoluses = new NonOverlappingIntervals<>();
+                extendedBoluses.reset().add(MainApp.getDbHelper().getExtendedBolusDataFromTime(from, false));
+
+                printStream.println("DAY_START;TIME_START;DAY_END;TIME_END;BOLUS;DURATION-PROGRAMMED;VALID");
+                for (int i = 0; i < extendedBoluses.size(); i++) {
+                        ExtendedBolus eb = extendedBoluses.get(i);
+                        date.setTime(eb.date);
+                        dateEnd.setTime(eb.end());
+                        printStream.println(df.format(date) + df.format(dateEnd)  +   DecimalFormatter.to2Decimal(eb.insulin) +";" + DecimalFormatter.to2Decimal(eb.durationInMinutes) +";" + eb.isValid );
+                }
+                printStream.flush();
+                extendedBoluses.reset();
+
+
+                zipOutputStream.putNextEntry(new ZipEntry("tbr-" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
+                NonOverlappingIntervals<TemporaryBasal> tempBasals = new NonOverlappingIntervals<>();
+                tempBasals.reset().add(MainApp.getDbHelper().getTemporaryBasalsDataFromTime(from, false));
+
+                printStream.println("DAY_START;TIME_START;DAY_END;TIME_END;PERCENTAGE;ABSOLUTE;IS_ABSOLUTE;VALID");
+                for (int i = 0; i < tempBasals.size(); i++) {
+                    TemporaryBasal tb = tempBasals.get(i);
+                    date.setTime(tb.date);
+                    dateEnd.setTime(tb.end());
+                    printStream.println(df.format(date)  +  df.format(dateEnd)  +  DecimalFormatter.to0Decimal(tb.percentRate) +";" + DecimalFormatter.to2Decimal(tb.absoluteRate) +";" + tb.isAbsolute +";" + tb.isValid );
+                }
+                printStream.flush();
+                tempBasals.reset();
+
+                zipOutputStream.putNextEntry(new ZipEntry("glycemia-" + DateFormat.format("yyyyMMdd-kkmmss", System.currentTimeMillis()) + ".csv"));
+                List<BgReading> bgReadings = MainApp.getDbHelper().getAllBgreadingsDataFromTime(from, false);
+                printStream.println("DAY;TIME;SENSOR_GLUCOSE");
+
+                for (BgReading reading : bgReadings
+                        ) {
+                        date.setTime(reading.date);
+                        printStream.println(df.format(date) + DecimalFormatter.to1Decimal(reading.value));
                 }
                 printStream.flush();
             } else {
