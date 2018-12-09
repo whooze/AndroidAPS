@@ -567,6 +567,13 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         OutputStream os = new FileOutputStream(outputFile);
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
 
+        double rate = result.rate;
+
+        if (result.rate == 0 && result.duration == 0) {
+            Profile profile = ProfileFunctions.getInstance().getProfile(result.date);
+            rate = profile.getBasal();
+        }
+
         writer.write(SP.getString(ID_KEY, "ID: unknown"));
         writer.newLine();
         writer.newLine();
@@ -581,7 +588,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                     calendar.get(Calendar.YEAR),
                     calendar.get(Calendar.HOUR_OF_DAY),
                     calendar.get(Calendar.MINUTE),
-                    result.rate,
+                    rate,
                     result.smb
                     ));
         }
