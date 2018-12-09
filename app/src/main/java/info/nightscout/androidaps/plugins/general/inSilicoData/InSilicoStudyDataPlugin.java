@@ -167,7 +167,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, true);
         LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, true);
         SP.putString(R.string.key_aps_mode, "open");
-        SP.putInt(R.string.key_loop_openmode_min_change, 0);
+        SP.putString(R.string.key_loop_openmode_min_change, "0");
 
         SP.putDouble(R.string.key_openapsma_max_basal, MAX_BASAL);
         SP.putDouble(R.string.key_openapssmb_max_iob, MAX_IOB);
