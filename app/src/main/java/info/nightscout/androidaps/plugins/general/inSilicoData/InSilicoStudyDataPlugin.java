@@ -61,6 +61,10 @@ import info.nightscout.androidaps.plugins.ProfileLocal.LocalProfilePlugin;
 import info.nightscout.androidaps.plugins.ProfileNS.NSProfilePlugin;
 import info.nightscout.androidaps.plugins.ProfileSimple.SimpleProfilePlugin;
 import info.nightscout.androidaps.plugins.PumpVirtual.VirtualPumpPlugin;
+import info.nightscout.androidaps.plugins.Sensitivity.SensitivityAAPSPlugin;
+import info.nightscout.androidaps.plugins.Sensitivity.SensitivityOref0Plugin;
+import info.nightscout.androidaps.plugins.Sensitivity.SensitivityOref1Plugin;
+import info.nightscout.androidaps.plugins.Sensitivity.SensitivityWeightedAveragePlugin;
 import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
 import info.nightscout.androidaps.plugins.Source.SourceDexcomG5Plugin;
 import info.nightscout.androidaps.plugins.Source.SourceGlimpPlugin;
@@ -164,10 +168,16 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         MainApp.removePlugin(ObjectivesPlugin.getPlugin());
 
-        LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, true);
-        LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, true);
-        SP.putString(R.string.key_aps_mode, "open");
+        LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, false);
+        LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, false);
+        SP.putString(R.string.key_aps_mode, "closed");
         SP.putString(R.string.key_loop_openmode_min_change, "0");
+
+        SensitivityOref1Plugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, true);
+        SensitivityOref1Plugin.getPlugin().setFragmentVisible(PluginType.SENSITIVITY, true);
+        SensitivityOref0Plugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
+        SensitivityAAPSPlugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
+        SensitivityWeightedAveragePlugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
 
         SP.putDouble(R.string.key_openapsma_max_basal, MAX_BASAL);
         SP.putDouble(R.string.key_openapssmb_max_iob, MAX_IOB);
