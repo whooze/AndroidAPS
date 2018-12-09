@@ -114,7 +114,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
     private InSilicoStudyDataPlugin(Context context) {
         super(new PluginDescription()
-                .mainType(PluginType.BGSOURCE)
+                .mainType(PluginType.GENERAL)
                 .fragmentClass(BGSourceFragment.class.getName())
                 .pluginName(R.string.SourceFile)
                 .shortName(R.string.sourceFile_shortname)
