@@ -60,6 +60,7 @@ import info.nightscout.androidaps.plugins.OpenAPSSMB.OpenAPSSMBPlugin;
 import info.nightscout.androidaps.plugins.ProfileLocal.LocalProfilePlugin;
 import info.nightscout.androidaps.plugins.ProfileNS.NSProfilePlugin;
 import info.nightscout.androidaps.plugins.ProfileSimple.SimpleProfilePlugin;
+import info.nightscout.androidaps.plugins.PumpVirtual.VirtualPumpPlugin;
 import info.nightscout.androidaps.plugins.Source.BGSourceFragment;
 import info.nightscout.androidaps.plugins.Source.SourceDexcomG5Plugin;
 import info.nightscout.androidaps.plugins.Source.SourceGlimpPlugin;
@@ -166,6 +167,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, true);
         LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, true);
         SP.putString(R.string.key_aps_mode, "open");
+        SP.putInt(R.string.key_loop_openmode_min_change, 0);
 
         SP.putDouble(R.string.key_openapsma_max_basal, MAX_BASAL);
         SP.putDouble(R.string.key_openapssmb_max_iob, MAX_IOB);
@@ -196,6 +198,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         LocalProfilePlugin.getPlugin().setFragmentVisible(PluginType.PROFILE, true);
         NSProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, false);
         SimpleProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, false);
+
+        VirtualPumpPlugin.getPlugin().setPluginEnabled(PluginType.PUMP, true);
 
         // how to detect max values
         // is it possible from age, weight and sum of basal rates?
