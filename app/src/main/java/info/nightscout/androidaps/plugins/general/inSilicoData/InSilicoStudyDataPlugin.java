@@ -41,6 +41,7 @@ import info.nightscout.androidaps.db.Source;
 import info.nightscout.androidaps.db.TempTarget;
 import info.nightscout.androidaps.db.TemporaryBasal;
 import info.nightscout.androidaps.events.EventRefreshGui;
+import info.nightscout.androidaps.events.EventRefreshOverview;
 import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.interfaces.PluginDescription;
 import info.nightscout.androidaps.interfaces.PluginType;
@@ -162,6 +163,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             exportFile(output, result);
         }
         MainApp.bus().post(new EventIobCalculationProgress(""));
+        MainApp.bus().post(new EventRefreshOverview("InSilico"));
     }
 
     private void configEnvironment() {
