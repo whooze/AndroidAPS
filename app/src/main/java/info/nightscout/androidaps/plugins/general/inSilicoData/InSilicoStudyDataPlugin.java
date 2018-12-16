@@ -28,6 +28,7 @@ import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
@@ -143,6 +144,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     }
 
     public void exec(String input, String output, Boolean forceClear) throws IOException {
+        log.debug("EXECUTING study data");
         importUsed = true;
         if (forceClear)
             clearDatabase();
@@ -163,6 +165,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     }
 
     private void configEnvironment() {
+        Config.IGNORE_BASAL_ALLIGNMENT = true;
+
         NSClientPlugin.getPlugin().setPluginEnabled(PluginType.GENERAL, false);
         NSClientPlugin.getPlugin().setFragmentVisible(PluginType.GENERAL, false);
 

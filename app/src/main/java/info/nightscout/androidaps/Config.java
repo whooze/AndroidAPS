@@ -20,5 +20,5 @@ public class Config {
 
     public static final boolean SMSCOMMUNICATORENABLED = !NSCLIENT;
 
-
+    public static boolean IGNORE_BASAL_ALLIGNMENT = false; // insiico study will disable it
 }
