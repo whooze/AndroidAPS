@@ -24,6 +24,7 @@ import java.util.Locale;
 
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
+import info.nightscout.androidaps.interfaces.PluginType;
 import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
 import info.nightscout.androidaps.services.Intents;
@@ -52,6 +53,8 @@ public class NSUpload {
     private static Logger log = LoggerFactory.getLogger(L.NSCLIENT);
 
     public static void uploadTempBasalStartAbsolute(TemporaryBasal temporaryBasal, Double originalExtendedAmount) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             Context context = MainApp.instance().getApplicationContext();
             JSONObject data = new JSONObject();
@@ -80,6 +83,8 @@ public class NSUpload {
     }
 
     public static void uploadTempBasalStartPercent(TemporaryBasal temporaryBasal) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
             boolean useAbsolute = SP.getBoolean("ns_sync_use_absolute", false);
@@ -123,6 +128,8 @@ public class NSUpload {
     }
 
     public static void uploadTempBasalEnd(long time, boolean isFakedTempBasal, long pumpId) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             Context context = MainApp.instance().getApplicationContext();
             JSONObject data = new JSONObject();
@@ -148,6 +155,8 @@ public class NSUpload {
     }
 
     public static void uploadExtendedBolus(ExtendedBolus extendedBolus) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             Context context = MainApp.instance().getApplicationContext();
             JSONObject data = new JSONObject();
@@ -176,6 +185,8 @@ public class NSUpload {
     }
 
     public static void uploadExtendedBolusEnd(long time, long pumpId) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             Context context = MainApp.instance().getApplicationContext();
             JSONObject data = new JSONObject();
@@ -204,6 +215,8 @@ public class NSUpload {
     }
 
     public static void uploadDeviceStatus() {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         Profile profile = ProfileFunctions.getInstance().getProfile();
         String profileName = ProfileFunctions.getInstance().getProfileName();
 
@@ -274,6 +287,8 @@ public class NSUpload {
     }
 
     public static void uploadTreatmentRecord(DetailedBolusInfo detailedBolusInfo) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         JSONObject data = new JSONObject();
         try {
             data.put("eventType", detailedBolusInfo.eventType);
@@ -302,6 +317,8 @@ public class NSUpload {
     }
 
     public static void uploadProfileSwitch(ProfileSwitch profileSwitch) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             JSONObject data = getJson(profileSwitch);
             uploadCareportalEntryToNS(data);
@@ -311,6 +328,8 @@ public class NSUpload {
     }
 
     public static void uploadTempTarget(TempTarget tempTarget) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             Profile profile = ProfileFunctions.getInstance().getProfile();
 
@@ -335,6 +354,8 @@ public class NSUpload {
     }
 
     public static void updateProfileSwitch(ProfileSwitch profileSwitch) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             JSONObject data = getJson(profileSwitch);
             if (profileSwitch._id != null) {
@@ -422,6 +443,8 @@ public class NSUpload {
     }
 
     public static void uploadOpenAPSOffline(double durationInMinutes) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         try {
             Context context = MainApp.instance().getApplicationContext();
             JSONObject data = new JSONObject();
@@ -448,6 +471,8 @@ public class NSUpload {
     }
 
     public static void uploadError(String error, Date date) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         Context context = MainApp.instance().getApplicationContext();
         Bundle bundle = new Bundle();
         bundle.putString("action", "dbAdd");
@@ -471,6 +496,8 @@ public class NSUpload {
     }
 
     public static void uploadBg(BgReading reading) {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         Context context = MainApp.instance().getApplicationContext();
         Bundle bundle = new Bundle();
         bundle.putString("action", "dbAdd");
@@ -495,6 +522,8 @@ public class NSUpload {
     }
 
     public static void uploadAppStart() {
+        if (!NSClientPlugin.getPlugin().isEnabled(PluginType.GENERAL))
+            return;
         if (SP.getBoolean(R.string.key_ns_logappstartedevent, true)) {
             Context context = MainApp.instance().getApplicationContext();
             Bundle bundle = new Bundle();
