@@ -44,7 +44,7 @@ public class Profile {
     private LongSparseArray<Double> targetHigh_v; // oldest at index 0
 
     private int percentage;
-    private int timeshift;
+    private int timeshift; // changed meaning  from hours to seconds for in silico test , TODO not for use because of sync with NS
 
     protected boolean isValid;
     protected boolean isValidated;
@@ -304,7 +304,7 @@ public class Profile {
     */
 
     Integer getShitfTimeSecs(Integer originalTime) {
-        Integer shiftedTime = originalTime + timeshift * 60 * 60;
+        Integer shiftedTime = originalTime + timeshift;
         shiftedTime = (shiftedTime + 24 * 60 * 60) % (24 * 60 * 60);
         return shiftedTime;
     }

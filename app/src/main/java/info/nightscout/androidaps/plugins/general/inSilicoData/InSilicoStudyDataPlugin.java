@@ -174,6 +174,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         MainApp.removePlugin(ObjectivesPlugin.getPlugin());
 
+        SP.putString(R.string.key_age, MainApp.gs(R.string.key_adult));
+
         LoopPlugin.getPlugin().setPluginEnabled(PluginType.LOOP, false);
         LoopPlugin.getPlugin().setFragmentVisible(PluginType.LOOP, false);
         SP.putString(R.string.key_aps_mode, "closed");
@@ -193,7 +195,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         SP.putBoolean(R.string.key_enableSMB_with_temptarget, false);
         SP.putBoolean(R.string.key_enableSMB_always, false);
         SP.putBoolean(R.string.key_enableSMB_after_carbs, true);
-        SP.putInt(R.string.key_smbmaxminutes, 30);
+        SP.putString(R.string.key_smbmaxminutes, "30");
         SP.putBoolean(R.string.key_use_uam, true);
         SP.putBoolean(R.string.key_high_temptarget_raises_sensitivity, true);
         SP.putBoolean(R.string.key_low_temptarget_lowers_sensitivity, true);
@@ -243,8 +245,20 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         String line;
 
-        line = reader.readLine(); // ID: adult#001
+        if (!readUpTo(reader, "Start")) return false;
+        reader.readLine(); // skip header "Time (local time) 	 	 	 	 Bolus"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 	 	 (Y/N)"
+        line = reader.readLine();
+        InputEntry start = parseDate(line);
+        long OFFSET = DateUtil.now() - start.date;
+        int PROFILESHIFT = (int) ((DateUtil.keepTimeOnly(DateUtil.now()) - DateUtil.keepTimeOnly(start.date)) / 1000); //from msecs to secs
+        log.debug("AGO set to " + DateUtil.minAgo(start.date));
 
+        // rewind back to start of the file
+        ((FileInputStream) is).getChannel().position(0);
+        reader = new BufferedReader(new InputStreamReader(is));
+
+        line = reader.readLine(); // ID: adult#001
         if (!SP.getString(ID_KEY, "").equals(line)) {
             // new person
             clearDatabase();
@@ -329,112 +343,12 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
             ProfileStore profileStore = new ProfileStore(json);
 
-            ProfileSwitch profileSwitch = NewNSTreatmentDialog.prepareProfileSwitch(profileStore, "InSilico", 0, 100, 0, 100000);
+            ProfileSwitch profileSwitch = NewNSTreatmentDialog.prepareProfileSwitch(profileStore, "InSilico", 0, 100, PROFILESHIFT, 100000);
             profileSwitch.source = Source.NIGHTSCOUT;
             TreatmentsPlugin.getPlugin().addToHistoryProfileSwitch(profileSwitch);
             SystemClock.sleep(2000); // wait for processing
         } catch (JSONException e) {
             e.printStackTrace();
-        }
-
-        MainApp.bus().post(new EventIobCalculationProgress("Loading carbs"));
-
-        // read meals
-        // Enteral_bolus (meal) ********************************************
-        // Time 	 	 	 	 	 CHO
-        // (dd/mm/yyyy hh:mm) 	 	 (g)
-        // 27/07/2018 08:00 	 	 60.00
-        // 27/07/2018 13:00 	 	 60.00
-        if (!readUpTo(reader, "Enteral_bolus (meal)")) return false;
-
-        reader.readLine(); // skip header "Time CHO"
-        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (g)"
-
-        while ((line = reader.readLine()) != null && !line.equals("")) {
-            InputEntry e = parseEntry(line);
-            if (e != null) {
-                DetailedBolusInfo t = new DetailedBolusInfo();
-                t.date = e.date;
-                t.carbs = e.value;
-                t.source = Source.NIGHTSCOUT;
-                t.notes = e.extra;
-                if (t.date <= DateUtil.now()) {
-                    TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
-
-                    // Start hypo target if needed
-                    BgReading actual = IobCobCalculatorPlugin.getPlugin().findOlder(t.date);
-                    if (actual != null && actual.value < 72) {
-                        TempTarget tempTarget = new TempTarget()
-                                .date(t.date)
-                                .duration(HYPO_TT_DURATION)
-                                .reason(MainApp.gs(R.string.hypo))
-                                .source(Source.USER)
-                                .low(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL))
-                                .high(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL));
-                        TreatmentsPlugin.getPlugin().addToHistoryTempTarget(tempTarget);
-                    }
-                } else
-                    log.warn("Ignoring CARBS: " + e.log());
-            }
-        }
-
-        MainApp.bus().post(new EventIobCalculationProgress("Loading boluses"));
-
-        // read bolus
-        // Insulin_bolus ***************************************************
-        // Time 	 	 	 	 	 Bolus
-        // (dd/mm/yyyy hh:mm) 	 	 (U)
-        // 27/07/2018 08:00 	 	 12.000000 R
-        // 27/07/2018 08:05 	 	 0.405618 R
-        // 27/07/2018 13:00 	 	 12.000000 R
-        if (!readUpTo(reader, "Insulin_bolus")) return false;
-
-        reader.readLine(); // skip header "Time Bolus"
-        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U)"
-
-        while ((line = reader.readLine()) != null && !line.equals("")) {
-            InputEntry e = parseEntry(line);
-            if (e != null) {
-                DetailedBolusInfo t = new DetailedBolusInfo();
-                t.date = e.date + T.secs(1).msecs(); // to be sure it's different from carbs
-                t.insulin = e.value;
-                t.source = Source.NIGHTSCOUT;
-                t.notes = e.extra;
-                if (t.date <= DateUtil.now())
-                    TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
-                else
-                    log.warn("Ignoring BOLUS: " + e.log());
-            }
-        }
-
-        MainApp.bus().post(new EventIobCalculationProgress("Loading TBRs"));
-
-        // read TBR
-        // Insulin_infusion ***************************************************
-        // Time 	 	 	 	 	 Basal rate
-        // (dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)
-        // 28/07/2018 22:35 	 	 1.800000 R
-        // 28/07/2018 22:40 	 	 1.800000 R
-        // 28/07/2018 22:45 	 	 1.200000 R
-        if (!readUpTo(reader, "Insulin_infusion")) return false;
-
-        reader.readLine(); // skip header "Time Basal rate"
-        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)"
-
-        while ((line = reader.readLine()) != null && !line.equals("")) {
-            InputEntry e = parseEntry(line);
-            if (e != null) {
-                if (e.date <= DateUtil.now() && ProfileFunctions.getInstance().getProfile().getBasal(e.date) != e.value) {
-                    TemporaryBasal temporaryBasal = new TemporaryBasal()
-                            .source(Source.NIGHTSCOUT)
-                            .date(e.date)
-                            .absolute(e.value)
-                            .duration(5);
-                    TreatmentsPlugin.getPlugin().addToHistoryTempBasal(temporaryBasal);
-                } else {
-                    log.warn("Ignoring TBR: " + e.log());
-                }
-            }
         }
 
         MainApp.bus().post(new EventIobCalculationProgress("Loading BGs"));
@@ -456,14 +370,115 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
             if (e != null) {
-                if (e.date <= DateUtil.now() && e.date >= (last_date + T.mins(5).msecs())) {
+                if (e.date >= (last_date + T.mins(5).msecs())) {
+                    log.debug(DateUtil.dateAndTimeFullString(e.date) + " -> " + DateUtil.dateAndTimeFullString(e.date + OFFSET));
                     BgReading bgReading = new BgReading()
-                            .date(e.date)
+                            .date(e.date + OFFSET)
                             .value(e.value * Constants.MMOLL_TO_MGDL);
                     MainApp.getDbHelper().createIfNotExists(bgReading, "G5 Native");
                     last_date = e.date;
                 } else {
                     log.warn("Ignoring BG: " + e.log());
+                }
+            }
+        }
+
+        SystemClock.sleep(3000); // wait for BG reload
+
+        // rewind back to start of the file
+        ((FileInputStream) is).getChannel().position(0);
+        reader = new BufferedReader(new InputStreamReader(is));
+
+        MainApp.bus().post(new EventIobCalculationProgress("Loading carbs"));
+
+        // read meals
+        // Enteral_bolus (meal) ********************************************
+        // Time 	 	 	 	 	 CHO
+        // (dd/mm/yyyy hh:mm) 	 	 (g)
+        // 27/07/2018 08:00 	 	 60.00
+        // 27/07/2018 13:00 	 	 60.00
+        if (!readUpTo(reader, "Enteral_bolus (meal)")) return false;
+
+        reader.readLine(); // skip header "Time CHO"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (g)"
+
+        while ((line = reader.readLine()) != null && !line.equals("")) {
+            InputEntry e = parseEntry(line);
+            if (e != null) {
+                DetailedBolusInfo t = new DetailedBolusInfo();
+                t.date = e.date + OFFSET;
+                t.carbs = e.value;
+                t.source = Source.NIGHTSCOUT;
+                t.notes = e.extra;
+                TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
+
+                // Start hypo target if needed
+                BgReading actual = IobCobCalculatorPlugin.getPlugin().findOlder(t.date);
+                if (actual != null && actual.value < 72) {
+                    TempTarget tempTarget = new TempTarget()
+                            .date(t.date)
+                            .duration(HYPO_TT_DURATION)
+                            .reason(MainApp.gs(R.string.hypo))
+                            .source(Source.USER)
+                            .low(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL))
+                            .high(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL));
+                    TreatmentsPlugin.getPlugin().addToHistoryTempTarget(tempTarget);
+                }
+            }
+        }
+
+        MainApp.bus().post(new EventIobCalculationProgress("Loading boluses"));
+
+        // read bolus
+        // Insulin_bolus ***************************************************
+        // Time 	 	 	 	 	 Bolus
+        // (dd/mm/yyyy hh:mm) 	 	 (U)
+        // 27/07/2018 08:00 	 	 12.000000 R
+        // 27/07/2018 08:05 	 	 0.405618 R
+        // 27/07/2018 13:00 	 	 12.000000 R
+        if (!readUpTo(reader, "Insulin_bolus")) return false;
+
+        reader.readLine(); // skip header "Time Bolus"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U)"
+
+        while ((line = reader.readLine()) != null && !line.equals("")) {
+            InputEntry e = parseEntry(line);
+            if (e != null) {
+                DetailedBolusInfo t = new DetailedBolusInfo();
+                t.date = e.date + T.secs(1).msecs() + OFFSET; // to be sure it's different from carbs
+                t.insulin = e.value;
+                t.source = Source.NIGHTSCOUT;
+                t.notes = e.extra;
+                TreatmentsPlugin.getPlugin().addToHistoryTreatment(t, true);
+            }
+        }
+
+        MainApp.bus().post(new EventIobCalculationProgress("Loading TBRs"));
+
+        // read TBR
+        // Insulin_infusion ***************************************************
+        // Time 	 	 	 	 	 Basal rate
+        // (dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)
+        // 28/07/2018 22:35 	 	 1.800000 R
+        // 28/07/2018 22:40 	 	 1.800000 R
+        // 28/07/2018 22:45 	 	 1.200000 R
+        if (!readUpTo(reader, "Insulin_infusion")) return false;
+
+        reader.readLine(); // skip header "Time Basal rate"
+        reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)"
+
+        while ((line = reader.readLine()) != null && !line.equals("")) {
+            InputEntry e = parseEntry(line);
+            if (e != null) {
+                if (ProfileFunctions.getInstance().getProfile().getBasal(e.date + OFFSET) != e.value) {
+                    TemporaryBasal temporaryBasal = new TemporaryBasal()
+                            .source(Source.NIGHTSCOUT)
+                            .date(e.date + OFFSET)
+                            .absolute(e.value)
+                            .duration(5);
+                    TreatmentsPlugin.getPlugin().addToHistoryTempBasal(temporaryBasal);
+                } else {
+                    log.warn("Ignoring TBR: " + e.log());
                 }
             }
         }
@@ -479,12 +494,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 	 	 (Y/N)"
 
         line = reader.readLine();
-        InputEntry start = parseDate(line);
-
-        if (start.date <= DateUtil.now() - T.mins(2).msecs() || start.date > DateUtil.now()) {
-            log.debug("Wrong start time: " + DateUtil.dateAndTimeFullString(start.date));
-            //return false;
-        }
+        start = parseDate(line);
 
         line = reader.readLine();
         if (!line.startsWith("END")) {
@@ -606,7 +616,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                     calendar.get(Calendar.MINUTE),
                     rate,
                     result.smb
-                    ));
+            ));
         }
         //writer.write("29/07/18 00:00  \t \t 2.673857  \t 0.000000 \t\t \"SSM=no\"        \" \" ");
         writer.newLine();

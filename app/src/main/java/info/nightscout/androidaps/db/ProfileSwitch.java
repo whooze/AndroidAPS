@@ -26,6 +26,7 @@ import info.nightscout.androidaps.plugins.Overview.notifications.Notification;
 import info.nightscout.androidaps.plugins.ProfileLocal.LocalProfilePlugin;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.DecimalFormatter;
+import info.nightscout.utils.Round;
 import info.nightscout.utils.T;
 
 @DatabaseTable(tableName = DatabaseHelper.DATABASE_PROFILESWITCHES)
@@ -109,7 +110,7 @@ public class ProfileSwitch implements Interval, DataPointWithLabelInterface {
         if (isCPP) {
             name += "(" + percentage + "%";
             if (timeshift != 0)
-                name += "," + timeshift + "h";
+                name += "," + Round.roundTo((double) timeshift / T.hours(1).secs(), 0.01) + "h";
             name += ")";
         }
         return name;

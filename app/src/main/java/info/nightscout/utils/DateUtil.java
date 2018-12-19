@@ -183,4 +183,13 @@ public class DateUtil {
     public static long roundDateToSec(long date) {
         return date - date % 1000;
     }
+
+    public static long keepTimeOnly(long date) {
+        GregorianCalendar startGC = new GregorianCalendar();
+        startGC.setTimeInMillis(date);
+        startGC.set(Calendar.DAY_OF_MONTH, 1);
+        startGC.set(Calendar.MONTH, 0);
+        startGC.set(Calendar.YEAR, 0);
+        return startGC.getTimeInMillis();
+    }
 }
