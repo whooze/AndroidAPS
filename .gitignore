@@ -13,3 +13,6 @@ debug/
 release/
 app/com.crashlytics.settings.json
 app/session_analytics.tap
+app/session_analytics_to_send/
+insilico/output.txt
+session_analytics_to_send/
