@@ -33,9 +33,11 @@ import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.DetailedBolusInfo;
+import info.nightscout.androidaps.data.MealData;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.db.BgReading;
+import info.nightscout.androidaps.db.DatabaseHelper;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.Source;
 import info.nightscout.androidaps.db.TempTarget;
@@ -51,6 +53,7 @@ import info.nightscout.androidaps.plugins.ConfigBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.ConfigBuilder.ProfileFunctions;
 import info.nightscout.androidaps.plugins.ConstraintsObjectives.ObjectivesPlugin;
 import info.nightscout.androidaps.plugins.Food.FoodPlugin;
+import info.nightscout.androidaps.plugins.IobCobCalculator.CobInfo;
 import info.nightscout.androidaps.plugins.IobCobCalculator.IobCobCalculatorPlugin;
 import info.nightscout.androidaps.plugins.IobCobCalculator.events.EventIobCalculationProgress;
 import info.nightscout.androidaps.plugins.Loop.APSResult;
@@ -77,6 +80,7 @@ import info.nightscout.androidaps.plugins.Source.SourceXdripPlugin;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.receivers.SourceFileReceiver;
 import info.nightscout.androidaps.services.Intents;
+import info.nightscout.utils.BolusWizard;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.SP;
 import info.nightscout.utils.T;
@@ -98,6 +102,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
     // ********* CONSTANTS ***********
 
+    InputEntry start;
 
     private Context context;
     HandlerThread handlerThread;
@@ -249,7 +254,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         reader.readLine(); // skip header "Time (local time) 	 	 	 	 Bolus"
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 	 	 (Y/N)"
         line = reader.readLine();
-        InputEntry start = parseDate(line);
+        start = parseDate(line);
         long OFFSET = DateUtil.now() - start.date;
         int PROFILESHIFT = (int) ((DateUtil.keepTimeOnly(DateUtil.now()) - DateUtil.keepTimeOnly(start.date)) / 1000); //from msecs to secs
         log.debug("AGO set to " + DateUtil.minAgo(start.date));
@@ -594,10 +599,38 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
 
         double rate = result.rate;
+        double bolus = result.smb;
+
+        Profile profile = ProfileFunctions.getInstance().getProfile(result.date);
 
         if (result.rate == 0 && result.duration == 0) {
-            Profile profile = ProfileFunctions.getInstance().getProfile(result.date);
             rate = profile.getBasal();
+        }
+
+        MealData mealData = TreatmentsPlugin.getPlugin().getMealData();
+
+        BolusWizard wizard = null;
+        if (Math.abs(mealData.lastCarbTime - DateUtil.now()) < T.mins(1).msecs()) {
+            // carbs issued now
+            if (Math.abs(mealData.lastBolusTime - DateUtil.now()) > T.mins(1).msecs()) {
+                // but bolus was not given => run wizard
+
+                BgReading lastBg = DatabaseHelper.actualBg();
+
+                wizard = new BolusWizard();
+                wizard.doCalc(profile,
+                        null,
+                        (int) mealData.lastCarbsAmount,
+                        0d, //cob,
+                        lastBg.valueToUnits(Constants.MMOL),
+                        0d,
+                        false,
+                        false,
+                        false,
+                        true
+                        );
+                bolus = wizard.calculatedTotalInsulin;
+            }
         }
 
         writer.write(SP.getString(ID_KEY, "ID: unknown"));
@@ -615,7 +648,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                     calendar.get(Calendar.HOUR_OF_DAY),
                     calendar.get(Calendar.MINUTE),
                     rate,
-                    result.smb
+                    bolus
             ));
         }
         //writer.write("29/07/18 00:00  \t \t 2.673857  \t 0.000000 \t\t \"SSM=no\"        \" \" ");
@@ -625,6 +658,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         writer.newLine();
 
         writer.write(result.json().toString());
+        if (wizard != null)
+            writer.write(wizard.log());
 
         writer.flush();
         return true;

@@ -259,8 +259,11 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
                 if (t > absorptionTime_ago && t <= now) {
                     if (treatment.carbs >= 1) {
                         result.carbs += treatment.carbs;
-                        if(t > result.lastCarbTime)
+                        if(t > result.lastCarbTime) {
                             result.lastCarbTime = t;
+                            result.lastCarbsAmount = treatment.carbs;
+                            result.lastTreatment = treatment;
+                        }
                     }
                 }
             }
