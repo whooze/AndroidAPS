@@ -65,6 +65,11 @@ import info.nightscout.androidaps.plugins.OpenAPSSMB.OpenAPSSMBPlugin;
 import info.nightscout.androidaps.plugins.ProfileLocal.LocalProfilePlugin;
 import info.nightscout.androidaps.plugins.ProfileNS.NSProfilePlugin;
 import info.nightscout.androidaps.plugins.ProfileSimple.SimpleProfilePlugin;
+import info.nightscout.androidaps.plugins.PumpCombo.ComboPlugin;
+import info.nightscout.androidaps.plugins.PumpDanaR.DanaRPlugin;
+import info.nightscout.androidaps.plugins.PumpDanaRS.DanaRSPlugin;
+import info.nightscout.androidaps.plugins.PumpDanaRv2.DanaRv2Plugin;
+import info.nightscout.androidaps.plugins.PumpInsight.InsightPlugin;
 import info.nightscout.androidaps.plugins.PumpVirtual.VirtualPumpPlugin;
 import info.nightscout.androidaps.plugins.Sensitivity.SensitivityAAPSPlugin;
 import info.nightscout.androidaps.plugins.Sensitivity.SensitivityOref0Plugin;
@@ -93,7 +98,17 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
     // ********* CONSTANTS ***********
 
-    private final String TARGET = "5.5";
+    private double target = 5.5d;
+
+    // 1)	AMA (temp basals only)
+    //2)	SMB with full bolus issued in wizard
+    //3)	SMB with ½ of full bolus in wizard
+    //4)	No bolus, carbs announcement only
+    //5)	No carbs announcements at all – full loop
+
+    private int configuration = 1;
+
+
     private final double HYPO_TT_TARGET = 7.5;
     private final int HYPO_TT_DURATION = 60;
 
@@ -103,6 +118,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     // ********* CONSTANTS ***********
 
     InputEntry start;
+    long OFFSET;
 
     private Context context;
     HandlerThread handlerThread;
@@ -149,11 +165,15 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         return importUsed;
     }
 
-    public void exec(String input, String output, Boolean forceClear) throws IOException {
+    public void exec(String input, String output, int configuration, double target) throws IOException {
         log.debug("EXECUTING study data");
         importUsed = true;
-        if (forceClear)
-            clearDatabase();
+
+        clearDatabase();
+
+        this.configuration = configuration;
+        this.target = target;
+
         configEnvironment();
         importFile(input);
 
@@ -174,6 +194,29 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     private void configEnvironment() {
         Config.IGNORE_BASAL_ALLIGNMENT = true;
 
+        SensitivityAAPSPlugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
+        SensitivityWeightedAveragePlugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
+        SensitivityOref1Plugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, true);
+        SensitivityOref1Plugin.getPlugin().setFragmentVisible(PluginType.SENSITIVITY, true);
+        SensitivityOref0Plugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
+
+        OpenAPSMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
+        OpenAPSAMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
+        OpenAPSSMBPlugin.getPlugin().setPluginEnabled(PluginType.APS, true);
+        OpenAPSSMBPlugin.getPlugin().setFragmentVisible(PluginType.APS, true);
+
+        switch (configuration) {
+            case 1:
+                SP.putBoolean(R.string.key_use_smb, false);
+                break;
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+                SP.putBoolean(R.string.key_use_smb, true);
+                break;
+        }
+
         NSClientPlugin.getPlugin().setPluginEnabled(PluginType.GENERAL, false);
         NSClientPlugin.getPlugin().setFragmentVisible(PluginType.GENERAL, false);
 
@@ -186,29 +229,19 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         SP.putString(R.string.key_aps_mode, "closed");
         SP.putString(R.string.key_loop_openmode_min_change, "0");
 
-        SensitivityOref1Plugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, true);
-        SensitivityOref1Plugin.getPlugin().setFragmentVisible(PluginType.SENSITIVITY, true);
-        SensitivityOref0Plugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
-        SensitivityAAPSPlugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
-        SensitivityWeightedAveragePlugin.getPlugin().setPluginEnabled(PluginType.SENSITIVITY, false);
-
         SP.putDouble(R.string.key_openapsma_max_basal, MAX_BASAL);
         SP.putDouble(R.string.key_openapssmb_max_iob, MAX_IOB);
         SP.putBoolean(R.string.openapsama_useautosens, true);
-        SP.putBoolean(R.string.key_use_smb, true);
         SP.putBoolean(R.string.key_enableSMB_with_COB, true);
-        SP.putBoolean(R.string.key_enableSMB_with_temptarget, false);
-        SP.putBoolean(R.string.key_enableSMB_always, false);
+        SP.putBoolean(R.string.key_enableSMB_with_temptarget, true);
+        SP.putBoolean(R.string.key_allowSMB_with_high_temptarget, false);
+        SP.putBoolean(R.string.key_enableSMB_always, true);
         SP.putBoolean(R.string.key_enableSMB_after_carbs, true);
         SP.putString(R.string.key_smbmaxminutes, "30");
         SP.putBoolean(R.string.key_use_uam, true);
         SP.putBoolean(R.string.key_high_temptarget_raises_sensitivity, true);
         SP.putBoolean(R.string.key_low_temptarget_lowers_sensitivity, true);
-
-        OpenAPSMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
-        OpenAPSAMAPlugin.getPlugin().setPluginEnabled(PluginType.APS, false);
-        OpenAPSSMBPlugin.getPlugin().setPluginEnabled(PluginType.APS, true);
-        OpenAPSSMBPlugin.getPlugin().setFragmentVisible(PluginType.APS, true);
+        SP.putString(R.string.key_openapsama_min_5m_carbimpact, "8");
 
         SourceDexcomG5Plugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, true);
         SourceGlimpPlugin.getPlugin().setPluginEnabled(PluginType.BGSOURCE, false);
@@ -222,12 +255,15 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         NSProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, false);
         SimpleProfilePlugin.getPlugin().setPluginEnabled(PluginType.PROFILE, false);
 
+        DanaRPlugin.getPlugin().setPluginEnabled(PluginType.PUMP, false);
+        DanaRv2Plugin.getPlugin().setPluginEnabled(PluginType.PUMP, false);
+        DanaRSPlugin.getPlugin().setPluginEnabled(PluginType.PUMP, false);
+        ComboPlugin.getPlugin().setPluginEnabled(PluginType.PUMP, false);
+        InsightPlugin.getPlugin().setPluginEnabled(PluginType.PUMP, false);
         VirtualPumpPlugin.getPlugin().setPluginEnabled(PluginType.PUMP, true);
 
         // how to detect max values
         // is it possible from age, weight and sum of basal rates?
-
-        // what sensitivity plugin ?
 
         ConfigBuilderPlugin.getPlugin().storeSettings("InSilico");
         MainApp.bus().post(new EventRefreshGui(true));
@@ -255,7 +291,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 	 	 (Y/N)"
         line = reader.readLine();
         start = parseDate(line);
-        long OFFSET = DateUtil.now() - start.date;
+        OFFSET = DateUtil.now() - start.date;
         int PROFILESHIFT = (int) ((DateUtil.keepTimeOnly(DateUtil.now()) - DateUtil.keepTimeOnly(start.date)) / 1000); //from msecs to secs
         log.debug("AGO set to " + DateUtil.minAgo(start.date));
 
@@ -342,8 +378,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             jp.put("carbratio", ics);
             jp.put("sens", isfs);
             jp.put("basal", basals);
-            jp.put("target_low", new JSONArray("[{\"time\":\"00:00\",\"value\":\"" + TARGET + "\",\"timeAsSeconds\":\"0\"}]"));
-            jp.put("target_high", new JSONArray("[{\"time\":\"00:00\",\"value\":\"" + TARGET + "\",\"timeAsSeconds\":\"0\"}]"));
+            jp.put("target_low", new JSONArray("[{\"time\":\"00:00\",\"value\":\"" + target + "\",\"timeAsSeconds\":\"0\"}]"));
+            jp.put("target_high", new JSONArray("[{\"time\":\"00:00\",\"value\":\"" + target + "\",\"timeAsSeconds\":\"0\"}]"));
             store.put("InSilico", jp);
 
             ProfileStore profileStore = new ProfileStore(json);
@@ -427,7 +463,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                             .source(Source.USER)
                             .low(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL))
                             .high(Profile.toMgdl(HYPO_TT_TARGET, Constants.MMOL));
-                    TreatmentsPlugin.getPlugin().addToHistoryTempTarget(tempTarget);
+                    if (TreatmentsPlugin.getPlugin().getTempTargetFromHistory(t.date) == null)
+                        TreatmentsPlugin.getPlugin().addToHistoryTempTarget(tempTarget);
                 }
             }
         }
@@ -610,7 +647,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         MealData mealData = TreatmentsPlugin.getPlugin().getMealData();
 
         BolusWizard wizard = null;
-        if (Math.abs(mealData.lastCarbTime - DateUtil.now()) < T.mins(1).msecs()) {
+        if (Math.abs(mealData.lastCarbTime - DateUtil.now()) < T.mins(4).msecs()) {
             // carbs issued now
             if (Math.abs(mealData.lastBolusTime - DateUtil.now()) > T.mins(1).msecs()) {
                 // but bolus was not given => run wizard
@@ -628,8 +665,21 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                         false,
                         false,
                         true
-                        );
+                );
                 bolus = wizard.calculatedTotalInsulin;
+                switch (configuration) {
+                    case 1:
+                    case 2:
+                        // full bolus
+                        break;
+                    case 3:
+                        bolus = bolus / 2;
+                        break;
+                    case 4:
+                    case 5:
+                        bolus = 0;
+                        break;
+                }
             }
         }
 

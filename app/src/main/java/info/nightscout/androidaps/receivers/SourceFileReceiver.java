@@ -12,7 +12,8 @@ public class SourceFileReceiver extends BroadcastReceiver {
 
     String input = "input";
     String output = "output";
-    boolean clear = false;
+    int configuration = 1;
+    double target = 5.5;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -23,15 +24,17 @@ public class SourceFileReceiver extends BroadcastReceiver {
             input = intent.getStringExtra("input");
         if (intent.hasExtra("output"))
             output = intent.getStringExtra("output");
-        if (intent.hasExtra("clear"))
-            clear = Boolean.parseBoolean(intent.getStringExtra("clear"));
+        if (intent.hasExtra("configuration"))
+            configuration = intent.getIntExtra("configuration", 1);
+        if (intent.hasExtra("target"))
+            target = Double.parseDouble(intent.getStringExtra("target"));
 
         System.out.println("=============================");
         System.out.println("Starting with : " + input + " " + output);
         System.out.println("=============================");
 
         try {
-            InSilicoStudyDataPlugin.getPlugin().exec(input, output, clear);
+            InSilicoStudyDataPlugin.getPlugin().exec(input, output, configuration, target);
         } catch (IOException e) {
             // this should be handled gracefully....
             e.printStackTrace();
