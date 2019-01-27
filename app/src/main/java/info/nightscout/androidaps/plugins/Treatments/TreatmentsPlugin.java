@@ -111,6 +111,26 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
         return this.service;
     }
 
+    public ArrayList<Treatment> getTreatments() {
+        return treatments;
+    }
+
+    public Intervals<TemporaryBasal> getTempBasals() {
+        return tempBasals;
+    }
+
+    public Intervals<ExtendedBolus> getExtendedBoluses() {
+        return extendedBoluses;
+    }
+
+    public Intervals<TempTarget> getTempTargets() {
+        return tempTargets;
+    }
+
+    public ProfileIntervals<ProfileSwitch> getProfiles() {
+        return profiles;
+    }
+
     private void initializeTreatmentData() {
         if (L.isEnabled(L.DATATREATMENTS))
             log.debug("initializeTreatmentData");

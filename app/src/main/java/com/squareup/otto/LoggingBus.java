@@ -20,7 +20,7 @@ import info.nightscout.androidaps.logging.L;
  * A summary of event-receiver calls that occurred so far is logged
  * after 10s (after startup) and then again every 60s.
  */
-public class LoggingBus extends Bus {
+public class LoggingBus extends ControllableBus {
     private static Logger log = LoggerFactory.getLogger(L.EVENTS);
 
     private static long everyMinute = System.currentTimeMillis() + 10 * 1000;

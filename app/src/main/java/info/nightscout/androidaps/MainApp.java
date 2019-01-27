@@ -12,6 +12,7 @@ import com.crashlytics.android.Crashlytics;
 import com.crashlytics.android.answers.Answers;
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.squareup.otto.Bus;
+import com.squareup.otto.ControllableBus;
 import com.squareup.otto.LoggingBus;
 import com.squareup.otto.ThreadEnforcer;
 
@@ -89,7 +90,7 @@ public class MainApp extends Application {
     private static Logger log = LoggerFactory.getLogger(L.CORE);
     private static KeepAliveReceiver keepAliveReceiver;
 
-    private static Bus sBus;
+    private static ControllableBus sBus;
     private static MainApp sInstance;
     public static Resources sResources;
 
@@ -137,7 +138,7 @@ public class MainApp extends Application {
         engineeringMode = engineeringModeSemaphore.exists() && engineeringModeSemaphore.isFile();
         devBranch = BuildConfig.VERSION.contains("dev");
 
-        sBus = L.isEnabled(L.EVENTS) && devBranch ? new LoggingBus(ThreadEnforcer.ANY) : new Bus(ThreadEnforcer.ANY);
+        sBus = L.isEnabled(L.EVENTS) && devBranch ? new LoggingBus(ThreadEnforcer.ANY) : new ControllableBus(ThreadEnforcer.ANY);
 
         if (pluginsList == null) {
             pluginsList = new ArrayList<>();
@@ -266,7 +267,7 @@ public class MainApp extends Application {
         }
     }
 
-    public static Bus bus() {
+    public static ControllableBus bus() {
         return sBus;
     }
 

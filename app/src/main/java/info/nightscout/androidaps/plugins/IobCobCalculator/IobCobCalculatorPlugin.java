@@ -98,6 +98,10 @@ public class IobCobCalculatorPlugin extends PluginBase {
         return autosensDataTable;
     }
 
+    public void initBgReadings() {
+        bgReadings = new ArrayList<>();
+    }
+
     public List<BgReading> getBgReadings() {
         return bgReadings;
     }
@@ -601,6 +605,13 @@ public class IobCobCalculatorPlugin extends PluginBase {
         }
     }
 
+    public void waitForCalculation() {
+        if (thread == null) return;
+        while(thread.getState() != Thread.State.TERMINATED) {
+            SystemClock.sleep(100);
+        }
+    }
+
     @Subscribe
     public void onNewProfile(EventNewBasalProfile ev) {
         if (this != getPlugin()) {
@@ -723,6 +734,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
                 log.debug("Clearing cached data.");
             iobTable = new LongSparseArray<>();
             autosensDataTable = new LongSparseArray<>();
+            basalDataTable = new LongSparseArray<>();
         }
     }
 

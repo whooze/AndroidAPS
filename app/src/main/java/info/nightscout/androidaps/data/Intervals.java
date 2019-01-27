@@ -92,5 +92,7 @@ public abstract class Intervals<T extends Interval> {
         return rawData.valueAt(size() - 1 - index);
     }
 
-
+    public synchronized void clear() {
+        rawData = new LongSparseArray<T>();
+    }
 }
