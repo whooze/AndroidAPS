@@ -88,6 +88,7 @@ import info.nightscout.androidaps.receivers.SourceFileReceiver;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.utils.BolusWizard;
 import info.nightscout.utils.DateUtil;
+import info.nightscout.utils.Profiler;
 import info.nightscout.utils.SP;
 import info.nightscout.utils.T;
 
@@ -120,6 +121,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
     InputEntry start;
     long OFFSET;
+    long oldestTime;
 
     private Context context;
     HandlerThread handlerThread;
@@ -167,6 +169,8 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     }
 
     public void exec(String input, String output, int configuration, double target) throws IOException {
+        long profstart = DateUtil.now();
+
         log.debug("EXECUTING study data");
         importUsed = true;
 
@@ -174,25 +178,35 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         clearDatabase();
 
+        Profiler.log(log, "DB clean", profstart);
+
         this.configuration = configuration;
         this.target = target;
 
         configEnvironment();
+        Profiler.log(log, "Config", profstart);
         importFile(input);
+        Profiler.log(log, "Import", profstart);
 
-        MainApp.bus().post(new EventIobCalculationProgress("Processing data"));
-        SystemClock.sleep(3000);
-
-        MainApp.bus().post(new EventIobCalculationProgress("Running calculation"));
         OpenAPSSMBPlugin.getPlugin().invoke("InSilico", false);
+
+        Profiler.log(log, "APS", profstart);
+
         APSResult result = OpenAPSSMBPlugin.getPlugin().getLastAPSResult();
         if (result != null) {
             MainApp.bus().post(new EventIobCalculationProgress("Writing output file"));
             exportFile(output, result);
         }
 
+        Profiler.log(log, "Export", profstart);
+
         MainApp.bus().enablePost();
-        MainApp.bus().post(new EventRefreshOverview("InSilico"));
+        new Thread() {
+            @Override
+            public void run() {
+                MainApp.bus().post(new EventRefreshOverview("InSilico"));
+            }
+        }.start();
     }
 
     private void configEnvironment() {
@@ -289,12 +303,13 @@ public class InSilicoStudyDataPlugin extends PluginBase {
     }
 
     private boolean importFile(String input) throws IOException {
+        long a1 = DateUtil.now();
         File dir = new File(context.getExternalFilesDir(null), "imports");
         File importFile = new File(dir, input);
 
         InputStream is = new FileInputStream(importFile);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is), 20000);
         String line;
 
         if (!readUpTo(reader, "Start")) return false;
@@ -303,13 +318,16 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         line = reader.readLine();
         start = parseDate(line);
         OFFSET = DateUtil.now() - start.date;
+        oldestTime = start.date - T.hours(11).msecs();
         int PROFILESHIFT = (int) ((DateUtil.keepTimeOnly(DateUtil.now()) - DateUtil.keepTimeOnly(start.date)) / 1000); //from msecs to secs
         log.debug("AGO set to " + DateUtil.minAgo(start.date));
 
+        Profiler.log(log, "read date", a1);
         // rewind back to start of the file
         ((FileInputStream) is).getChannel().position(0);
         reader = new BufferedReader(new InputStreamReader(is));
 
+        Profiler.log(log, "rewind", a1);
         line = reader.readLine(); // ID: adult#001
         if (!SP.getString(ID_KEY, "").equals(line)) {
             // new person
@@ -400,6 +418,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             e.printStackTrace();
         }
 
+        Profiler.log(log, "Profile", a1);
         // read meals
         // Enteral_bolus (meal) ********************************************
         // Time 	 	 	 	 	 CHO
@@ -413,7 +432,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
-            if (e != null) {
+            if (e != null && e.date > oldestTime) {
                 Treatment t = new Treatment();
                 t.date = e.date + OFFSET;
                 t.carbs = e.value;
@@ -436,6 +455,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             }
         }
 
+        Profiler.log(log, "meal", a1);
         // read bolus
         // Insulin_bolus ***************************************************
         // Time 	 	 	 	 	 Bolus
@@ -450,7 +470,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
-            if (e != null) {
+            if (e != null && e.date > oldestTime) {
                 Treatment t = new Treatment();
                 t.date = e.date + T.secs(1).msecs() + OFFSET; // to be sure it's different from carbs
                 t.insulin = e.value;
@@ -461,6 +481,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         MainApp.bus().post(new EventIobCalculationProgress("Loading TBRs"));
 
+        Profiler.log(log, "bolus", a1);
         // read TBR
         // Insulin_infusion ***************************************************
         // Time 	 	 	 	 	 Basal rate
@@ -473,11 +494,12 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         reader.readLine(); // skip header "Time Basal rate"
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (U/h  S|R)"
 
+        TemporaryBasal temporaryBasal = null;
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
-            if (e != null) {
+            if (e != null & e.date > oldestTime) {
                 if (ProfileFunctions.getInstance().getProfile().getBasal(e.date + OFFSET) != e.value) {
-                    TemporaryBasal temporaryBasal = new TemporaryBasal()
+                    temporaryBasal = new TemporaryBasal()
                             .source(Source.NIGHTSCOUT)
                             .date(e.date + OFFSET)
                             .absolute(e.value)
@@ -488,7 +510,10 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 }
             }
         }
+        // set last temp as running not ended
+        //if (temporaryBasal != null) temporaryBasal.durationInMinutes = 30;
 
+        Profiler.log(log, "tbr", a1);
         // read CGM
         // Glucose_concentration ***************************************************
         // Time 	 	 	 	 	 conc
@@ -501,11 +526,9 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         reader.readLine(); // skip header "Time conc"
         reader.readLine(); // skip header "(dd/mm/yyyy hh:mm) 	 	 (mmol/L)"
 
-        long last_date = 0;
-
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
-            if (e != null) {
+            if (e != null && e.date > oldestTime) {
                 if ((start.date - e.date) % T.mins(5).msecs() < 1000 ) {
                     log.debug(DateUtil.dateAndTimeFullString(e.date) + " -> " + DateUtil.dateAndTimeFullString(e.date + OFFSET));
                     BgReading bgReading = new BgReading()
@@ -513,13 +536,13 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                             .value(e.value * Constants.MMOLL_TO_MGDL);
                     if (bgReading.value < 39) bgReading.value = 39;
                     IobCobCalculatorPlugin.getPlugin().getBgReadings().add(0, bgReading);
-                    last_date = e.date;
                 } else {
                     log.warn("Ignoring BG: " + e.log());
                 }
             }
         }
 
+        Profiler.log(log, "bg", a1);
         // read start time
         // Start ******************************************
         // Time (local time) 	 	 	 	 Bolus
@@ -539,9 +562,13 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             return false;
         }
 
+        Profiler.log(log, "EOF", a1);
         IobCobCalculatorPlugin.getPlugin().createBucketedData();
+        Profiler.log(log, "bucketed data", a1);
         IobCobCalculatorPlugin.getPlugin().runCalculation("inSilico", System.currentTimeMillis(), false, true, new EventNewBasalProfile());
+        Profiler.log(log, "autosens start", a1);
         IobCobCalculatorPlugin.getPlugin().waitForCalculation();
+        Profiler.log(log, "autosens end", a1);
 
         log.debug("========== FILE ==========");
         return true;
@@ -576,6 +603,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
     @Nullable
     InputEntry parseEntry(String line) {
+        /*
         String pattern = "(\\d+)\\/(\\d+)\\/(\\d+)\\s+(\\d+)\\:(\\d+)\\s+(\\d+)\\.(\\d+)\\s+(.*)"; // 27/07/2018 08:00 	 	 12.000000 R
 
         Matcher m = Pattern.compile(pattern).matcher(line);
@@ -599,11 +627,21 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             //log.debug(e.log());
             return e;
         }
-        return null;
+        */
+        String[] split = line.split("[^0-9.]");
+
+        if (split.length < 9) return null;
+
+        InputEntry e = new InputEntry();
+        e.date = DateUtil.fastTimeConvert(split[2], split[1], split[0], split[3], split[4]);
+        e.value = Double.parseDouble(split[9]);
+
+        return e;
     }
 
     @Nullable
     InputEntry parseDate(String line) {
+        /*
         String pattern = "(\\d+)\\/(\\d+)\\/(\\d+)\\s+(\\d+)\\:(\\d+)(.*)"; // 27/07/2018 08:00 	 	 N
 
         Matcher m = Pattern.compile(pattern).matcher(line);
@@ -623,7 +661,15 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             //log.debug(e.log());
             return e;
         }
-        return null;
+        */
+        String[] split = line.split("[^0-9.]");
+
+        if (split.length < 5) return null;
+
+        InputEntry e = new InputEntry();
+        e.date = DateUtil.fastTimeConvert(split[2], split[1], split[0], split[3], split[4]);
+
+        return e;
     }
 
     private boolean exportFile(String output, APSResult result) throws IOException {

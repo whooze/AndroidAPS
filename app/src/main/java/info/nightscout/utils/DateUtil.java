@@ -7,12 +7,15 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -20,12 +23,15 @@ import java.util.regex.Pattern;
 
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
+import info.nightscout.androidaps.logging.L;
 
 /**
  * The Class DateUtil. A simple wrapper around SimpleDateFormat to ease the handling of iso date string &lt;-&gt; date obj
  * with TZ
  */
 public class DateUtil {
+
+    private static Logger log = LoggerFactory.getLogger(L.CORE);
 
     /**
      * The date format in iso.
@@ -191,5 +197,49 @@ public class DateUtil {
         startGC.set(Calendar.MONTH, 0);
         startGC.set(Calendar.YEAR, 0);
         return startGC.getTimeInMillis();
+    }
+
+    private static HashMap<String, Long> dates = new HashMap<>();
+
+    public static long fastTimeConvert(String year, String month, String day, String hour, String minute) {
+        //long start = now();
+        String date = day + month + year;
+
+        Long cached = dates.get(date);
+        if (cached == null) {
+            Calendar calendar = new GregorianCalendar();
+            calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(day));
+            calendar.set(Calendar.MONTH, Integer.parseInt(month) - 1);
+            calendar.set(Calendar.YEAR, Integer.parseInt(year));
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+
+            cached = calendar.getTimeInMillis();
+            dates.put(date, cached);
+        }
+        long result = cached + parseInt(hour) * T.hours(1).msecs() + parseInt(minute) * T.mins(1).msecs();
+        //Profiler.log(log, "fastTimeConvert", start);
+        return result;
+    }
+
+    public static int parseInt(final String s) {
+        // Check for a sign.
+        int num = 0;
+        int sign = -1;
+        final int len = s.length();
+        final char ch = s.charAt(0);
+        if (ch == '-')
+            sign = 1;
+        else
+            num = '0' - ch;
+
+        // Build the number.
+        int i = 1;
+        while (i < len)
+            num = num * 10 + '0' - s.charAt(i++);
+
+        return sign * num;
     }
 }

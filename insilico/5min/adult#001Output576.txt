@@ -1,0 +1,9 @@
+ID:  adult#001 
+
+(dd/mm/yyyy  hh:mm)      (U/h)      (U)   "Diagnostics"  "Large change Y/N"   
+
+30/01/19 00:00  	 	 2.555851  	 0.000000 		 "SSM=no"        " " 
+ 
+
+END 
+Duration of run (ms): 	 0.297036
