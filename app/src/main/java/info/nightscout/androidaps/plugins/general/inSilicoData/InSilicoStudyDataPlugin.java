@@ -527,7 +527,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         while ((line = reader.readLine()) != null && !line.equals("")) {
             InputEntry e = parseEntry(line);
             if (e != null && e.date > oldestTime) {
-                if ((start.date - e.date) % T.mins(5).msecs() < 1000 ) {
+                if ((start.date - e.date) % T.mins(5).msecs() < 1000) {
                     log.debug(DateUtil.dateAndTimeFullString(e.date) + " -> " + DateUtil.dateAndTimeFullString(e.date + OFFSET));
                     BgReading bgReading = new BgReading()
                             .date(e.date + OFFSET)
@@ -685,6 +685,10 @@ public class InSilicoStudyDataPlugin extends PluginBase {
             rate = profile.getBasal();
         }
 
+        if (rate == -1) {
+            rate = profile.getBasal();
+        }
+
         MealData mealData = TreatmentsPlugin.getPlugin().getMealData();
 
         BolusWizard wizard = null;
@@ -730,18 +734,17 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         writer.write("(dd/mm/yyyy  hh:mm)      (U/h)      (U)   \"Diagnostics\"  \"Large change Y/N\"   ");
         writer.newLine();
 
-        if (result.isChangeRequested()) {
-            Calendar calendar = new GregorianCalendar();
-            writer.write(String.format("%02d/%02d/%02d %02d:%02d  \t \t %.3f  \t %.2f \t\t \"SSM=no\"        \" \" ",
-                    calendar.get(Calendar.DAY_OF_MONTH),
-                    calendar.get(Calendar.MONTH) + 1,
-                    calendar.get(Calendar.YEAR),
-                    calendar.get(Calendar.HOUR_OF_DAY),
-                    calendar.get(Calendar.MINUTE),
-                    rate,
-                    bolus
-            ));
-        }
+        Calendar calendar = new GregorianCalendar();
+        writer.write(String.format("%02d/%02d/%02d %02d:%02d  \t \t %.3f  \t %.2f \t\t \"SSM=no\"        \" \" ",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                rate,
+                bolus
+        ));
+
         //writer.write("29/07/18 00:00  \t \t 2.673857  \t 0.000000 \t\t \"SSM=no\"        \" \" ");
         writer.newLine();
         writer.newLine();
