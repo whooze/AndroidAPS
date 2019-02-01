@@ -1,0 +1,9 @@
+ID: adult#001 
+
+(dd/mm/yyyy  hh:mm)      (U/h)      (U)   "Diagnostics"  "Large change Y/N"   
+
+
+END
+{"temp":"absolute","bg":102,"tick":-1,"eventualBG":141,"insulinReq":0,"deliverAt":"2019-02-01T03:17:02.860Z","sensitivityRatio":1,"predBGs":{"IOB":[102,101,101,100,100,101,101,102,102,103,104,106,107,108,110,111,113,114,116,117,119,120,122,123,124,126,127,128,129,130,131,132,133,134,135,135,136,136,137,137,138,138,138,139],"ZT":[102,102,102,103,104,105,106,107,108,110,112,114,116]},"COB":0,"IOB":-1.546,"reason":"COB: 0, Dev: -0.2, BGI: 0.0, ISF: 1.6, CR: 13.94, Target: 6.5, minPredBG 5.9, minGuardBG 5.6, IOBpredBG 7.7; 7.8-5.9 in range: no temp required; setting current basal of 1.54 as temp. . Suggested rate is same as profile rate, no temp basal is active, doing nothing","timestamp":"2019-02-01T03:17:02Z"}TempTarget=null; Carbs=80; Bg=5.665682; Cob=0.0; Correction=0.0; PercentageCorrection=100.0; IncludeBolusIOB=false; IncludeBasalIOB=false; Superbolus=false; Trend=true; 
+targetBGLow=6.5; targetBGHigh=6.5; bgDiff=-0.8343179999999997; insulinFromBG=-0.5348192307692305; insulinFromCarbs=5.738880918220947; insulingFromBolusIOB=0.0; insulingFromBasalsIOB=0.0; insulinFromCorrection=0.0; insulinFromSuperBolus=0.0; insulinFromCOB=0.0; insulinFromTrend=-0.09294871794871794; 
+calculatedTotalInsulin=5.1000000000000005; totalBeforePercentageAdjustment=5.111112969502999; carbsEquivalent=0.0; 

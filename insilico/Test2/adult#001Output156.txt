@@ -1,0 +1,9 @@
+ID: adult#001 
+
+(dd/mm/yyyy  hh:mm)      (U/h)      (U)   "Diagnostics"  "Large change Y/N"   
+01/02/2019 04:14  	 	 2.448  	 9.80 		 "SSM=no"        " " 
+
+END
+{"temp":"absolute","bg":130.3,"tick":"+3","eventualBG":132,"insulinReq":0.3,"deliverAt":"2019-02-01T03:14:22.788Z","sensitivityRatio":1.2,"predBGs":{"IOB":[130,131,132,132,132,133,133,133,133,133,133,132,132,131,131,131,131,130,130,130,130,130,129,129,129,129,129,129,129,129,129,129,129,130,130,130,130,130,130,130,130,130,130,130,130,131],"ZT":[130,129,129,128,127,126,126,126,125,125,125,125,125,126,126,127,127],"UAM":[130,131,131,130,130,129,128,128,127,126,126,125,125,125,124,124,124,123,123,123,123,123,123,123,122,122,122,122,122,122,123,123,123,123,123,123,123,123,123,123,123,123,123,124]},"COB":0,"IOB":0.35000000000000003,"reason":"COB: 0, Dev: 0.6, BGI: 0.0, ISF: 1.3, CR: 6.46, Target: 6.5, minPredBG 6.9, minGuardBG 6.8, IOBpredBG 7.3, UAMpredBG 6.9; Eventual BG 7.3 >= 6.5, no temp, setting 2.448U\/hr. ","duration":30,"rate":2.448,"timestamp":"2019-02-01T03:14:22Z"}TempTarget=null; Carbs=60; Bg=7.23734; Cob=0.0; Correction=0.0; PercentageCorrection=100.0; IncludeBolusIOB=false; IncludeBasalIOB=false; Superbolus=false; Trend=true; 
+targetBGLow=6.5; targetBGHigh=6.5; bgDiff=0.7373399999999997; insulinFromBG=0.4726538461538459; insulinFromCarbs=9.287925696594428; insulingFromBolusIOB=0.0; insulingFromBasalsIOB=0.0; insulinFromCorrection=0.0; insulinFromSuperBolus=0.0; insulinFromCOB=0.0; insulinFromTrend=0.0876068376068376; 
+calculatedTotalInsulin=9.8; totalBeforePercentageAdjustment=9.848186380355111; carbsEquivalent=0.0; 

@@ -168,7 +168,7 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         return importUsed;
     }
 
-    public void exec(String input, String output, int configuration, double target) throws IOException {
+    public void exec(String input, String output, int configuration, double target, boolean refreshScreen) throws IOException {
         long profstart = DateUtil.now();
 
         log.debug("EXECUTING study data");
@@ -194,19 +194,20 @@ public class InSilicoStudyDataPlugin extends PluginBase {
 
         APSResult result = OpenAPSSMBPlugin.getPlugin().getLastAPSResult();
         if (result != null) {
-            MainApp.bus().post(new EventIobCalculationProgress("Writing output file"));
             exportFile(output, result);
         }
 
         Profiler.log(log, "Export", profstart);
 
         MainApp.bus().enablePost();
-        new Thread() {
-            @Override
-            public void run() {
-                MainApp.bus().post(new EventRefreshOverview("InSilico"));
-            }
-        }.start();
+        if (refreshScreen) {
+            new Thread() {
+                @Override
+                public void run() {
+                    MainApp.bus().post(new EventRefreshOverview("InSilico"));
+                }
+            }.start();
+        }
     }
 
     private void configEnvironment() {
@@ -284,7 +285,6 @@ public class InSilicoStudyDataPlugin extends PluginBase {
         // is it possible from age, weight and sum of basal rates?
 
         ConfigBuilderPlugin.getPlugin().storeSettings("InSilico");
-        MainApp.bus().post(new EventRefreshGui(true));
     }
 
     private void clearDatabase() {
@@ -478,8 +478,6 @@ public class InSilicoStudyDataPlugin extends PluginBase {
                 TreatmentsPlugin.getPlugin().getTreatments().add(t);
             }
         }
-
-        MainApp.bus().post(new EventIobCalculationProgress("Loading TBRs"));
 
         Profiler.log(log, "bolus", a1);
         // read TBR

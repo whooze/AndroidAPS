@@ -1,0 +1,9 @@
+ID: adult#001 
+
+(dd/mm/yyyy  hh:mm)      (U/h)      (U)   "Diagnostics"  "Large change Y/N"   
+01/02/2019 04:21  	 	 0.000  	 3.80 		 "SSM=no"        " " 
+
+END
+{"temp":"absolute","bg":157.4,"tick":-3,"eventualBG":103,"insulinReq":0,"deliverAt":"2019-02-01T03:21:12.436Z","sensitivityRatio":1.17,"predBGs":{"IOB":[157,154,151,147,144,141,137,134,131,128,124,121,118,115,112,109,107,104,102,100,98,97,95,94,92,91,90,89,88,87,87,86,86,85,85,85,85,85,84],"ZT":[157,152,147,142,138,133,129,125,122,118,115,112,110,108,105,104,102,101,100,99,99,98,98,98,99,99,100,101,102,104,105,107,109,111,113,115],"COB":[157,154,151,148,145,142,140,137,135,132,130,128,126,124,122,121,119,118,117,115,114,113,112,111,110,110,109,108,107,107,106,106,105,105,105,104,104,104,104,104,104,104,104,104,104,104,104,103],"UAM":[157,154,150,147,143,139,135,131,127,124,120,117,113,110,107,105,102,100,98,96,94,92,90,89,88,86,85,84,83,83,82,82,81,81,80,80,80,80,80,80,80,80,80,80,79]},"COB":7.483632740740755,"IOB":3.426,"reason":"COB: 7.483632740740755, Dev: 0.7, BGI: -0.3, ISF: 1.3, CR: 5.68, Target: 6.5, minPredBG 5.4, minGuardBG 4.6, IOBpredBG 4.7, COBpredBG 5.7, UAMpredBG 4.4; Eventual BG 5.7 < 6.5, setting 60m zero temp. ","duration":60,"rate":0,"timestamp":"2019-02-01T03:21:12Z"}TempTarget=null; Carbs=15; Bg=8.745452; Cob=0.0; Correction=0.0; PercentageCorrection=100.0; IncludeBolusIOB=false; IncludeBasalIOB=false; Superbolus=false; Trend=true; 
+targetBGLow=6.5; targetBGHigh=6.5; bgDiff=2.2454520000000002; insulinFromBG=1.4393923076923079; insulinFromCarbs=2.6408450704225355; insulingFromBolusIOB=0.0; insulingFromBasalsIOB=0.0; insulinFromCorrection=0.0; insulinFromSuperBolus=0.0; insulinFromCOB=0.0; insulinFromTrend=-0.24999999999999992; 
+calculatedTotalInsulin=3.8000000000000003; totalBeforePercentageAdjustment=3.8302373781148433; carbsEquivalent=0.0; 

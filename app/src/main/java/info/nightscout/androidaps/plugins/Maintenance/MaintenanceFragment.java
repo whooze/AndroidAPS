@@ -82,7 +82,7 @@ public class MaintenanceFragment extends Fragment {
         view.findViewById(R.id.read_source_file).setOnClickListener(view1 -> {
             InSilicoStudyDataPlugin plugin = MainApp.getSpecificPlugin(InSilicoStudyDataPlugin.class);
             try {
-                plugin.exec("input.txt", "output.txt", 1, 5.5d);
+                plugin.exec("input.txt", "output.txt", 1, 5.5d, true);
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -1,0 +1,7 @@
+ID: adult#001 
+
+(dd/mm/yyyy  hh:mm)      (U/h)      (U)   "Diagnostics"  "Large change Y/N"   
+
+
+END
+{"temp":"absolute","bg":97.2,"tick":"+0","eventualBG":132,"insulinReq":0,"deliverAt":"2019-02-01T03:11:41.186Z","sensitivityRatio":1,"predBGs":{"IOB":[97,97,97,98,98,99,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,114,115,116,117,117,118,119,119,120,120,121,121,122,122,122,123,123,123,123,124,124,124,124,124,124,125],"ZT":[97,98,99,100,101,103,104,105,107,108,110,112,113,115]},"COB":0,"IOB":-1.167,"reason":"COB: 0, Dev: 0.1, BGI: 0.1, ISF: 1.6, CR: 13.94, Target: 6.5, minPredBG 6.2, minGuardBG 5.4, IOBpredBG 6.9; Eventual BG 7.3 > 6.5 but Min. Delta -0.08 < Exp. Delta 0.0; setting current basal of 1.54 as temp. . Suggested rate is same as profile rate, no temp basal is active, doing nothing","timestamp":"2019-02-01T03:11:41Z"}

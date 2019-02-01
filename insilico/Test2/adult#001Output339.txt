@@ -1,0 +1,7 @@
+ID: adult#001 
+
+(dd/mm/yyyy  hh:mm)      (U/h)      (U)   "Diagnostics"  "Large change Y/N"   
+01/02/2019 04:19  	 	 1.725  	 0.00 		 "SSM=no"        " " 
+
+END
+{"temp":"absolute","bg":115.10000000000001,"tick":-1,"eventualBG":117,"insulinReq":0,"deliverAt":"2019-02-01T03:19:29.398Z","sensitivityRatio":1.12,"predBGs":{"IOB":[115,114,114,113,113,113,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,112,113],"ZT":[115,115,115,115,115,115,115,115,116,116,117,117,118,119,120,120]},"COB":0,"IOB":-0.037,"reason":"COB: 0, Dev: 0.1, BGI: 0.0, ISF: 1.4, CR: 5.68, Target: 6.5, minPredBG 6.2, minGuardBG 6.2, IOBpredBG 6.3; Eventual BG 6.5 > 6.5 but Min. Delta -0.70 < Exp. Delta 0.0; setting current basal of 1.7248 as temp. ","duration":30,"rate":1.7248,"timestamp":"2019-02-01T03:19:29Z"}

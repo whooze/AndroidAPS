@@ -35,6 +35,7 @@ import info.nightscout.androidaps.plugins.Overview.events.EventNewNotification;
 import info.nightscout.androidaps.plugins.Overview.notifications.Notification;
 import info.nightscout.androidaps.plugins.Treatments.Treatment;
 import info.nightscout.androidaps.plugins.Treatments.TreatmentsPlugin;
+import info.nightscout.androidaps.plugins.general.inSilicoData.InSilicoStudyDataPlugin;
 import info.nightscout.utils.DateUtil;
 import info.nightscout.utils.DecimalFormatter;
 import info.nightscout.utils.FabricPrivacy;
@@ -386,10 +387,12 @@ public class IobCobOref1Thread extends Thread {
                         log.debug(autosensData.toString());
                 }
             }
-            new Thread(() -> {
-                SystemClock.sleep(1000);
-                MainApp.bus().post(new EventAutosensCalculationFinished(cause));
-            }).start();
+            if (!InSilicoStudyDataPlugin.getPlugin().inStudy()) {
+                new Thread(() -> {
+                    SystemClock.sleep(1000);
+                    MainApp.bus().post(new EventAutosensCalculationFinished(cause));
+                }).start();
+            }
         } finally {
             mWakeLock.release();
             MainApp.bus().post(new EventIobCalculationProgress(""));
