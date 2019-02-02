@@ -30,7 +30,7 @@ public class SourceFileReceiver extends BroadcastReceiver {
         if (intent.hasExtra("target"))
             target = Double.parseDouble(intent.getStringExtra("target"));
         if (intent.hasExtra("refreshScreen"))
-            refreshScreen = intent.getBooleanExtra("refreshScreen", false);
+            refreshScreen = Boolean.parseBoolean(intent.getStringExtra("refreshScreen"));
 
         System.out.println("=============================");
         System.out.println("Starting with : " + input + " " + output);
