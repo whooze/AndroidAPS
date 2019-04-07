@@ -1087,6 +1087,7 @@
     <string name="mute_alert">Demp</string>
     <string name="pump_alert">Pomp alarm</string>
     <string name="log_site_changes">Log ligging veranderings</string>
+    <string name="log_reservoir_changes">Log stoor veranderinge</string>
     <string name="log_tube_changes">Log voerpyp verandering</string>
     <string name="log_battery_changes">Log battery verandering</string>
     <string name="log_operating_mode_changes">Log bedryf modus veranderinge</string>
@@ -1148,6 +1149,7 @@
     <string name="tomato">Tomato (MiaoMiao)</string>
     <string name="tomato_short">Tomato</string>
     <string name="dst_in_24h_warning">Daglig spaar tyd verandering in 24 h of minder</string>
+    <string name="dst_loop_disabled_warning">Daglig spaar tyd het verander minder as 3 ure terug - Geslote lus afgeskakel</string>
     <string name="storage">interne berging beperking</string>
     <string name="diskfull">Bevry ten minste %1$d MB van intene stoorspasie! Lus gedeaktiveer!</string>
     <string name="wrongformat">Verkeerde formaat</string>
